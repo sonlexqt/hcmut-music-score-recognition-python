@@ -1,9 +1,11 @@
 import cv2
 import numpy as np
+import math
 
-"""
-Constants
-"""
+
+"""""""""""""""""""""""""""""""""""""""
+CONSTANTS
+"""""""""""""""""""""""""""""""""""""""
 WTITLE_SOURCE_IMAGE = "Source Image"
 WTITLE_ROI_IMAGE = "ROI Image"
 WTITLE_ROI_IMAGE_THRESHOLDED = "ROI Image Thresholded"
@@ -15,9 +17,10 @@ MIN_ROTATION_ANGLE = - MAX_ROTATION_ANGLE
 REC_LINE_WIDTH = 2
 SPACE_BAR_KEY = 32
 IMG_FILE = 'images/scores/auld-lang-syne.jpg'
-"""
-Global variables
-"""
+
+"""""""""""""""""""""""""""""""""""""""
+GLOBAL VARIABLES
+"""""""""""""""""""""""""""""""""""""""
 # TODO XIN change vars name later
 is_dragging = False
 is_roi_selected = False
@@ -28,7 +31,7 @@ roi_img = None
 roi_img_gray = None
 roi_img_thresh = None
 blank_roi_img = None
-# rotatedImg = None
+rotated_img = None
 # rotatedImgGray = None
 # rotatedImgThresholded = None
 # blankRotatedImg = None
@@ -40,37 +43,7 @@ HELPER FUNCTIONS
 """""""""""""""""""""""""""""""""""""""
 
 
-def is_this_pixel_removed(i, j, value, image):
-    height, width = image.shape[:2]
-    max_cols = width
-    if value > 0:
-        if i == 0 or i == 1:
-            return True
-        if image[i - 1, j] > 0:
-            if image[i - 2, j] > 0:
-                return False
-            if j >= 1 and image[i - 2, j - 1] > 0:
-                return False
-            if j < max_cols and image[i - 2, j + 1] > 0:
-                return False
-    return True
-
-"""""""""""""""""""""""""""""""""""""""
-STEPS
-"""""""""""""""""""""""""""""""""""""""
-
-
-def read_src_image():
-    # Step 1
-    global img
-    img = cv2.imread(IMG_FILE, 1)
-    if img is not None:
-        cv2.imshow(WTITLE_SOURCE_IMAGE, img)
-    else:
-        raise FileNotFoundError('Input image is not found')
-
-
-def mouse_drag_handler(event, x, y, _):
+def mouse_drag_handler(event, x, y, flags, params):
     global is_dragging, is_roi_selected, roi_ref_points, img, roi_img
 
     if event == cv2.EVENT_LBUTTONDOWN and not is_dragging:
@@ -99,6 +72,44 @@ def mouse_drag_handler(event, x, y, _):
     if event == cv2.EVENT_LBUTTONUP:
         is_dragging = False
         is_roi_selected = True
+
+
+def is_this_pixel_removed(i, j, value, image):
+    height, width = image.shape[:2]
+    max_cols = width
+    if value > 0:
+        if i == 0 or i == 1:
+            return True
+        if image[i - 1, j] > 0:
+            if image[i - 2, j] > 0:
+                return False
+            if j >= 1 and image[i - 2, j - 1] > 0:
+                return False
+            if j < max_cols and image[i - 2, j + 1] > 0:
+                return False
+    return True
+
+
+def calculate_entropy(PthetasAvg, length):
+    res = 0
+    for i in range(0, length):
+        if PthetasAvg[i] != 0:
+            res += PthetasAvg[i] * math.log(PthetasAvg[i])
+    return -res
+
+"""""""""""""""""""""""""""""""""""""""
+STEPS
+"""""""""""""""""""""""""""""""""""""""
+
+
+def read_src_image():
+    # Step 1
+    global img
+    img = cv2.imread(IMG_FILE, 1)
+    if img is not None:
+        cv2.imshow(WTITLE_SOURCE_IMAGE, img)
+    else:
+        raise FileNotFoundError('Input image is not found')
 
 
 def roi_selection():
@@ -131,10 +142,63 @@ def candidate_points_extraction():
     cv2.waitKey(0)
 
 
+def rotation_angle_estimation():
+    global img, blank_roi_img, rotated_img
+    height, width = blank_roi_img.shape[:2]
+    entropy_ps_length = MAX_ROTATION_ANGLE - MIN_ROTATION_ANGLE + 1
+    entropy_ps = [0] * entropy_ps_length
+    for a in range(0, entropy_ps_length):
+        # TODO XIN change variable name
+        pthetas = [0] * height
+        pthetas_avg = [0] * height
+        sum_pthetas = 0
+        angle = a - MAX_ROTATION_ANGLE
+        center = (width / 2, height / 2)
+        rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+        rotated_roi_img = cv2.warpAffine(blank_roi_img, rotation_matrix, (height, width))
+        # The next calculation will use rotated_roi_img instead
+        for h in range(0, height):
+            sum_of_rows = 0
+            for w in range(0, width):
+                try:
+                    sum_of_rows += rotated_roi_img[h, w]
+                except IndexError:
+                    break  # Break out when list index out of range
+            pthetas[h] = sum_of_rows
+            sum_pthetas += pthetas[h]
+        for h in range(0, height):
+            pthetas_avg[h] = pthetas[h] / sum_pthetas
+        entropy_ps[a] = calculate_entropy(pthetas_avg, height)
+    min_a = 0
+    min_entropy = entropy_ps[min_a]
+    min_angle = min_a - MAX_ROTATION_ANGLE
+    for a in range(0, entropy_ps_length):
+        if entropy_ps[a] < min_entropy:
+            min_a = a
+            min_entropy = entropy_ps[a]
+            min_angle = min_a - MAX_ROTATION_ANGLE
+    print('Estimated rotation angle (deg):', min_angle)
+    height, width = img.shape[:2]
+    center = (height / 2, width / 2)
+    rotation_matrix = cv2.getRotationMatrix2D(center, min_angle, 1.0)
+    # Maintain white background when using OpenCV warpAffine
+    # (src, M, dsize, dst=None, flags=None, borderMode=None, borderValue=None)
+    # TODO XIN fix rotated_img offset problem
+    rotated_img = cv2.warpAffine(img, rotation_matrix, (width, height), cv2.INTER_AREA, cv2.BORDER_DEFAULT, cv2.BORDER_REPLICATE)
+    cv2.imshow(WTITLE_ROTATED_IMAGE, rotated_img)
+    cv2.waitKey(0)
+    return 0
+
+"""""""""""""""""""""""""""""""""""""""
+MAIN
+"""""""""""""""""""""""""""""""""""""""
+
+
 def main():
     read_src_image()
     roi_selection()
     candidate_points_extraction()
+    rotation_angle_estimation()
 
 if __name__ == '__main__':
     main()
