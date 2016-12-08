@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 """
 Constants
@@ -12,29 +13,55 @@ WTITLE_IMG_WO_STAFFLINES = "Image without staff lines"
 MAX_ROTATION_ANGLE = 30
 MIN_ROTATION_ANGLE = - MAX_ROTATION_ANGLE
 REC_LINE_WIDTH = 2
-
+SPACE_BAR_KEY = 32
+IMG_FILE = 'images/scores/auld-lang-syne.jpg'
 """
 Global variables
 """
 # TODO XIN change vars name later
 is_dragging = False
 is_roi_selected = False
+is_roi_img_shown = False
 roi_ref_points = []
 img = None
 roi_img = None
-# roiImgGray = None
-# roiImgThresholded = None
-# blankRoiImg = None
+roi_img_gray = None
+roi_img_thresh = None
+blank_roi_img = None
 # rotatedImg = None
 # rotatedImgGray = None
 # rotatedImgThresholded = None
 # blankRotatedImg = None
 # withoutStaffLines = None
 
-IMG_FILE = 'images/scores/auld-lang-syne.jpg'
+
+"""""""""""""""""""""""""""""""""""""""
+HELPER FUNCTIONS
+"""""""""""""""""""""""""""""""""""""""
+
+
+def is_this_pixel_removed(i, j, value, image):
+    height, width = image.shape[:2]
+    max_cols = width
+    if value > 0:
+        if i == 0 or i == 1:
+            return True
+        if image[i - 1, j] > 0:
+            if image[i - 2, j] > 0:
+                return False
+            if j >= 1 and image[i - 2, j - 1] > 0:
+                return False
+            if j < max_cols and image[i - 2, j + 1] > 0:
+                return False
+    return True
+
+"""""""""""""""""""""""""""""""""""""""
+STEPS
+"""""""""""""""""""""""""""""""""""""""
 
 
 def read_src_image():
+    # Step 1
     global img
     img = cv2.imread(IMG_FILE, 1)
     if img is not None:
@@ -43,7 +70,7 @@ def read_src_image():
         raise FileNotFoundError('Input image is not found')
 
 
-def mouse_drag_handler(event, x, y, flags, params):
+def mouse_drag_handler(event, x, y, _):
     global is_dragging, is_roi_selected, roi_ref_points, img, roi_img
 
     if event == cv2.EVENT_LBUTTONDOWN and not is_dragging:
@@ -75,20 +102,39 @@ def mouse_drag_handler(event, x, y, flags, params):
 
 
 def roi_selection():
-    global roi_img
+    # Step 2
+    global roi_img, is_roi_img_shown
     cv2.setMouseCallback(WTITLE_SOURCE_IMAGE, mouse_drag_handler)
-    while True:
+    while 1:
         if is_roi_selected:
-            print('show roi img now')
             cv2.imshow(WTITLE_ROI_IMAGE, roi_img)
+            is_roi_img_shown = True
         key = cv2.waitKey(0)
-        if key == 27:
+        if key == SPACE_BAR_KEY and is_roi_img_shown:
             break
+
+
+def candidate_points_extraction():
+    # Step 3
+    global roi_img, roi_img_gray, roi_img_thresh, blank_roi_img
+    roi_img_gray = cv2.cvtColor(roi_img, cv2.COLOR_BGR2GRAY)
+    _, roi_img_thresh = cv2.threshold(roi_img_gray, 127, 255, cv2.THRESH_BINARY_INV)
+    height, width = roi_img_thresh.shape[:2]
+    blank_roi_img = np.zeros((height, width, 1), np.uint8)
+    for i in range(0, height):
+        for j in range(0, width):
+            pixel_gray_scale_value = roi_img_thresh[i, j]
+            if is_this_pixel_removed(i, j, pixel_gray_scale_value, roi_img_thresh):
+                blank_roi_img[i, j] = pixel_gray_scale_value
+    _, blank_roi_img = cv2.threshold(blank_roi_img, 127, 255, cv2.THRESH_BINARY)
+    cv2.imshow(WTITLE_CANDIDATE_POINTS, blank_roi_img)
+    cv2.waitKey(0)
 
 
 def main():
     read_src_image()
     roi_selection()
+    candidate_points_extraction()
 
 if __name__ == '__main__':
     main()
