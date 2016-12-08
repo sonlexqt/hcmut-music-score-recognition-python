@@ -32,11 +32,7 @@ roi_img_gray = None
 roi_img_thresh = None
 blank_roi_img = None
 rotated_img = None
-# rotatedImgGray = None
-# rotatedImgThresholded = None
-# blankRotatedImg = None
-# withoutStaffLines = None
-
+without_staff_lines = None
 
 """""""""""""""""""""""""""""""""""""""
 HELPER FUNCTIONS
@@ -90,11 +86,11 @@ def is_this_pixel_removed(i, j, value, image):
     return True
 
 
-def calculate_entropy(PthetasAvg, length):
+def calculate_entropy(pthetas_avg, length):
     res = 0
     for i in range(0, length):
-        if PthetasAvg[i] != 0:
-            res += PthetasAvg[i] * math.log(PthetasAvg[i])
+        if pthetas_avg[i] != 0:
+            res += pthetas_avg[i] * math.log(pthetas_avg[i])
     return -res
 
 """""""""""""""""""""""""""""""""""""""
@@ -131,7 +127,7 @@ def candidate_points_extraction():
     roi_img_gray = cv2.cvtColor(roi_img, cv2.COLOR_BGR2GRAY)
     _, roi_img_thresh = cv2.threshold(roi_img_gray, 127, 255, cv2.THRESH_BINARY_INV)
     height, width = roi_img_thresh.shape[:2]
-    blank_roi_img = np.zeros((height, width, 1), np.uint8)
+    blank_roi_img = np.zeros((height, width), np.uint8)
     for i in range(0, height):
         for j in range(0, width):
             pixel_gray_scale_value = roi_img_thresh[i, j]
@@ -148,7 +144,6 @@ def rotation_angle_estimation():
     entropy_ps_length = MAX_ROTATION_ANGLE - MIN_ROTATION_ANGLE + 1
     entropy_ps = [0] * entropy_ps_length
     for a in range(0, entropy_ps_length):
-        # TODO XIN change variable name
         pthetas = [0] * height
         pthetas_avg = [0] * height
         sum_pthetas = 0
@@ -160,6 +155,7 @@ def rotation_angle_estimation():
         for h in range(0, height):
             sum_of_rows = 0
             for w in range(0, width):
+                # TODO XIN weird error: index out of bounds (have to try-catch)
                 try:
                     sum_of_rows += rotated_roi_img[h, w]
                 except IndexError:
@@ -178,14 +174,70 @@ def rotation_angle_estimation():
             min_entropy = entropy_ps[a]
             min_angle = min_a - MAX_ROTATION_ANGLE
     print('Estimated rotation angle (deg):', min_angle)
-    height, width = img.shape[:2]
-    center = (height / 2, width / 2)
-    rotation_matrix = cv2.getRotationMatrix2D(center, min_angle, 1.0)
+    img_height, img_width = img.shape[:2]
+    img_center = (img_height / 2, img_width / 2)
+    rotation_matrix = cv2.getRotationMatrix2D(img_center, min_angle, 1.0)
     # Maintain white background when using OpenCV warpAffine
     # (src, M, dsize, dst=None, flags=None, borderMode=None, borderValue=None)
     # TODO XIN fix rotated_img offset problem
-    rotated_img = cv2.warpAffine(img, rotation_matrix, (width, height), cv2.INTER_AREA, cv2.BORDER_DEFAULT, cv2.BORDER_REPLICATE)
+    rotated_img = cv2.warpAffine(img, rotation_matrix, (img_width, img_height),
+                                 cv2.INTER_AREA, cv2.BORDER_DEFAULT, cv2.BORDER_REPLICATE)
     cv2.imshow(WTITLE_ROTATED_IMAGE, rotated_img)
+    cv2.waitKey(0)
+
+
+def adaptive_removal():
+    global rotated_img, without_staff_lines
+    height, width = rotated_img.shape[:2]
+    pthetas = [0] * height
+    rotated_img_gray = cv2.cvtColor(rotated_img, cv2.COLOR_BGR2GRAY)
+    _, rotated_img_thresh = cv2.threshold(rotated_img_gray, 127, 255, cv2.THRESH_BINARY_INV)
+    # Calculate horizontal projection
+    for h in range(0, height):
+        sum_of_rows = 0
+        for w in range(0, width):
+            sum_of_rows += rotated_img_thresh[h, w]
+        pthetas[h] = sum_of_rows
+    # Get the maximum of the projection(T)
+    T = pthetas[0]
+    for h in range(0, height):
+        if pthetas[h] > T:
+            T = pthetas[h]
+    # Then the projection is binarized using a threshold of half of the maximum
+    for h in range(0, height):
+        # TODO XIN currently using a hardcoded number 4 here
+        if pthetas[h] > (T / 4):
+            pthetas[h] = 255
+        else:
+            pthetas[h] = 0
+    # Estimate the staff line width
+    number_of_rows = 0
+    number_of_lines = 0
+    for h in range(0, height):
+        if pthetas[h] == 255:
+            number_of_rows += 1
+            if h >= 1 and pthetas[h - 1] != 255:
+                # Count this case as a new line
+                number_of_lines += 1
+    W = number_of_rows / number_of_lines
+    # Z is the number of times we need to run the staff line removal method
+    Z = math.ceil(W / 2)
+    without_staff_lines = rotated_img_thresh.copy()
+    wsl_height, wsl_width = without_staff_lines.shape[:2]
+    blank_rotated_img = np.zeros((wsl_height, wsl_width), np.uint8)
+    for z in range(0, Z):
+        for i in range(0, wsl_height):
+            for j in range(0, wsl_width):
+                pixel_gray_scale_value = without_staff_lines[i, j]
+                if is_this_pixel_removed(i, j, pixel_gray_scale_value, without_staff_lines):
+                    # Yes: copy this pixel to blank_rotated_img
+                    blank_rotated_img[i, j] = pixel_gray_scale_value
+        without_staff_lines = without_staff_lines - blank_rotated_img
+    # TODO XIN add comment
+    dilate_structuring_element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    without_staff_lines = cv2.dilate(without_staff_lines, dilate_structuring_element)
+    _, without_staff_lines = cv2.threshold(without_staff_lines, 127, 255, cv2.THRESH_BINARY_INV)
+    cv2.imshow(WTITLE_IMG_WO_STAFFLINES, without_staff_lines)
     cv2.waitKey(0)
     return 0
 
@@ -199,6 +251,7 @@ def main():
     roi_selection()
     candidate_points_extraction()
     rotation_angle_estimation()
+    adaptive_removal()
 
 if __name__ == '__main__':
     main()
