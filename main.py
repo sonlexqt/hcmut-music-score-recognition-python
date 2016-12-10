@@ -10,6 +10,8 @@ IMG_1 = 'images/scores/auld-lang-syne.jpg'
 IMG_2 = 'images/scores/happy-birthday.jpg'
 IMG_3 = 'images/scores/silent-night.jpg'
 IMG_4 = 'images/scores/we-wish-you-a-merry-xmas.jpg'
+IMG_5 = 'images/scores/jingle-bells.jpg'
+IMG_FILE = IMG_1
 
 """""""""""""""""""""""""""""""""""""""
 CONSTANTS
@@ -28,7 +30,6 @@ SPACE_BAR_KEY = 32
 HISTOGRAM_BINARY_RATIO = 2
 BAR_WIDTH_RATIO = 7
 BAR_HEIGHT_REL_TOL = 0.1
-IMG_FILE = IMG_4
 
 """""""""""""""""""""""""""""""""""""""
 GLOBAL VARIABLES
