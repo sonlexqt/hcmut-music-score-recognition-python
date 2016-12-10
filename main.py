@@ -4,19 +4,31 @@ import math
 from utils import Utils
 
 """""""""""""""""""""""""""""""""""""""
+FOR TESTING
+"""""""""""""""""""""""""""""""""""""""
+IMG_1 = 'images/scores/auld-lang-syne.jpg'
+IMG_2 = 'images/scores/happy-birthday.jpg'
+IMG_3 = 'images/scores/silent-night.jpg'
+IMG_4 = 'images/scores/we-wish-you-a-merry-xmas.jpg'
+
+"""""""""""""""""""""""""""""""""""""""
 CONSTANTS
 """""""""""""""""""""""""""""""""""""""
 WTITLE_IMG_SOURCE = "Source Image"
 WTITLE_IMG_ROI = "ROI Image"
 WTITLE_CANDIDATE_POINTS = "Candidate Points"
 WTITLE_IMG_ROTATED = "Rotated image"
+WTITLE_IMG_ROTATED_THRESH = "Rotated image thresh"
 WTITLE_IMG_WITHOUT_STAFFLINES = "Image without staff lines"
 WTITLE_CONNECTED_COMPONENTS = "Connected components"
 MAX_ROTATION_ANGLE = 30
 MIN_ROTATION_ANGLE = - MAX_ROTATION_ANGLE
 REC_LINE_WIDTH = 2
 SPACE_BAR_KEY = 32
-IMG_FILE = 'images/scores/auld-lang-syne.jpg'
+HISTOGRAM_BINARY_RATIO = 2
+BAR_WIDTH_RATIO = 7
+BAR_HEIGHT_REL_TOL = 0.1
+IMG_FILE = IMG_4
 
 """""""""""""""""""""""""""""""""""""""
 GLOBAL VARIABLES
@@ -25,6 +37,10 @@ is_dragging = False
 is_roi_selected = False
 is_roi_img_shown = False
 roi_ref_points = []
+staff_lines = []
+staff_line_width = 0
+staff_line_space = 0
+staff_height = 0
 # The matrices
 img = None
 img_roi = None
@@ -90,6 +106,46 @@ def calculate_entropy(pthetas_avg, length):
         if pthetas_avg[i] != 0:
             res += pthetas_avg[i] * math.log(pthetas_avg[i])
     return -res
+
+
+def get_staff_info(data):
+    global staff_lines, staff_line_space, staff_height
+    staff_lines = []  # Contains elements with format (index, width)
+    current_staff_index = -1
+
+    for i, value in enumerate(data):
+        if value == 255 and i > 0:
+            if data[i - 1] == 0:
+                current_staff_index += 1
+                staff_lines.append((i, 1))
+            else:
+                current = staff_lines[current_staff_index]
+                index = current[0]
+                width = current[1]
+                staff_lines[current_staff_index] = (index, width + 1)
+
+    sum_staff_lines_space = 0
+    sum_staff_height = 0
+    for i, this_staff_line in enumerate(staff_lines):
+        if i % 5 == 0:  # The staff_lines list index stats from 0
+            continue
+        else:
+            last_staff_line = staff_lines[i - 1]
+            this_staff_line_space = this_staff_line[0] - last_staff_line[0]
+            sum_staff_lines_space += this_staff_line_space
+            if (i + 1) % 5 == 0:
+                # If this is the last line of a staff group
+                first_staff_line = staff_lines[i + 1 - 5]
+                this_staff_height = this_staff_line[0] - first_staff_line[0]
+                sum_staff_height += this_staff_height
+
+    staff_groups = len(staff_lines) / 5
+    num_staff_lines_space = len(staff_lines) - staff_groups
+    avg_staff_line_space = sum_staff_lines_space / num_staff_lines_space
+    staff_line_space = avg_staff_line_space
+    avg_staff_height = sum_staff_height / staff_groups
+    staff_height = avg_staff_height
+    return 0
 
 """""""""""""""""""""""""""""""""""""""
 STEPS
@@ -187,16 +243,17 @@ def rotation_angle_estimation():
 
 def adaptive_removal():
     # Step 5
-    global img_rotated, img_without_staff_lines
+    global img_rotated, img_without_staff_lines, staff_line_width
     height, width = img_rotated.shape[:2]
     pthetas = [0] * height
-    rotated_img_gray = cv2.cvtColor(img_rotated, cv2.COLOR_BGR2GRAY)
-    _, rotated_img_thresh = cv2.threshold(rotated_img_gray, 127, 255, cv2.THRESH_BINARY_INV)
+    img_rotated_gray = cv2.cvtColor(img_rotated, cv2.COLOR_BGR2GRAY)
+    _, img_rotated_thresh = cv2.threshold(img_rotated_gray, 127, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    cv2.imshow(WTITLE_IMG_ROTATED_THRESH, img_rotated_thresh)
     # Calculate horizontal projection
     for h in range(0, height):
         sum_of_rows = 0
         for w in range(0, width):
-            sum_of_rows += rotated_img_thresh[h, w]
+            sum_of_rows += img_rotated_thresh[h, w]
         pthetas[h] = sum_of_rows
     # Get the maximum of the projection(T)
     T = pthetas[0]
@@ -205,11 +262,12 @@ def adaptive_removal():
             T = pthetas[h]
     # Then the projection is binarized using a threshold of half of the maximum
     for h in range(0, height):
-        # TODO XIN currently using a hardcoded number 4 here
-        if pthetas[h] > (T / 4):
+        if pthetas[h] > (T / HISTOGRAM_BINARY_RATIO):
             pthetas[h] = 255
         else:
             pthetas[h] = 0
+    # Get staff_lines & staff_line_space info
+    get_staff_info(pthetas)
     # Estimate the staff line width
     number_of_rows = 0
     number_of_lines = 0
@@ -220,9 +278,10 @@ def adaptive_removal():
                 # Count this case as a new line
                 number_of_lines += 1
     W = number_of_rows / number_of_lines
+    staff_line_width = W
     # Z is the number of times we need to run the staff line removal method
     Z = math.ceil(W / 2)
-    img_without_staff_lines = rotated_img_thresh.copy()
+    img_without_staff_lines = img_rotated_thresh.copy()
     wsl_height, wsl_width = img_without_staff_lines.shape[:2]
     blank_rotated_img = np.zeros((wsl_height, wsl_width), np.uint8)
     for z in range(0, Z):
@@ -243,7 +302,8 @@ def adaptive_removal():
 
 
 def get_connected_components():
-    global img_without_staff_lines
+    # Step 6
+    global img_without_staff_lines, staff_line_width, staff_height
     img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
     _, thresh = cv2.threshold(img_without_staff_lines, 127, 255, cv2.THRESH_BINARY_INV)
     connectivity = 8
@@ -263,7 +323,7 @@ def get_connected_components():
         reversed_p1 = (left, -top)
         reversed_p2 = (right, -bottom)
         rects_init.append([reversed_p1, reversed_p2])
-    # TODO XIN need to remove the biggest rectangle
+    # TODO XIN need to remove the biggest rectangle (this won't happen in C++)
     rects_init.pop(0)
     rects_result = Utils.remove_overlapping_rectangles(rects_init)
     for rect in rects_result:
@@ -273,6 +333,19 @@ def get_connected_components():
         # Now need to convert the Descartes coordinate system back to the OpenCV coordinate system
         restored_p1 = (left, -top)
         restored_p2 = (right, -bottom)
+        rect_width = abs(right - left)
+        rect_height = abs(top - bottom)
+        estimated_bar_width = staff_line_width * BAR_WIDTH_RATIO
+        if rect_width <= estimated_bar_width:
+            # Check if this is a bar
+            if math.isclose(staff_height, rect_height, rel_tol=BAR_HEIGHT_REL_TOL):
+                # If this is a bar, draw a blue rectangle
+                cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 0, 0), 1, 8, 0)
+            else:
+                # Else, draw a green rectangle
+                cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 255, 0), 1, 8, 0)
+            continue
+        # Else, draw a red rectangle
         cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
     cv2.imshow(WTITLE_CONNECTED_COMPONENTS, img_without_staff_lines_rgb)
     cv2.waitKey(0)
