@@ -7,11 +7,12 @@ from utils import Utils
 FOR TESTING
 """""""""""""""""""""""""""""""""""""""
 IMG_1 = 'images/scores/auld-lang-syne.jpg'
-IMG_2 = 'images/scores/happy-birthday.jpg'
-IMG_3 = 'images/scores/silent-night.jpg'
-IMG_4 = 'images/scores/we-wish-you-a-merry-xmas.jpg'
-IMG_5 = 'images/scores/jingle-bells.jpg'
-IMG_FILE = IMG_1
+IMG_2 = 'images/scores/auld-lang-syne-2.jpg'
+IMG_3 = 'images/scores/happy-birthday.jpg'
+IMG_4 = 'images/scores/silent-night.jpg'
+IMG_5 = 'images/scores/we-wish-you-a-merry-xmas.jpg'
+IMG_6 = 'images/scores/jingle-bells.jpg'
+IMG_FILE = IMG_3
 
 """""""""""""""""""""""""""""""""""""""
 CONSTANTS
@@ -327,7 +328,13 @@ def get_connected_components():
     # TODO XIN need to remove the biggest rectangle (this won't happen in C++)
     rects_init.pop(0)
     rects_result = Utils.remove_overlapping_rectangles(rects_init)
-    for rect in rects_result:
+
+    print('rects_result')
+    print(rects_result)
+    print(len(rects_result))
+    # rects_result = Utils.sort_rectangles(rects_result)
+
+    for i, rect in enumerate(rects_result):
         left, top, right, bottom = Utils.get_rect_coordinates(rect)
         # p1 = (left, top)
         # p2 = (right, bottom)
@@ -336,6 +343,14 @@ def get_connected_components():
         restored_p2 = (right, -bottom)
         rect_width = abs(right - left)
         rect_height = abs(top - bottom)
+
+        # TODO XIN crop the rect from the image
+        y = restored_p1[1]
+        x = restored_p1[0]
+        sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
+        cv2.imwrite('images/symbols/rect-' + str(i) + '.jpg', sub_image)
+        # cv2.putText(img_without_staff_lines_rgb, str(i), (int(x + rect_width / 4), y + rect_height + 10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255))
+
         estimated_bar_width = staff_line_width * BAR_WIDTH_RATIO
         if rect_width <= estimated_bar_width:
             # Check if this is a bar

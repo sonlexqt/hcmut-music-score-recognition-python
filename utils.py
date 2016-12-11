@@ -68,6 +68,18 @@ def remove_duplicates(rects):
     return res
 
 
+def convert_coordinate(rect):
+    left, top, right, bottom = Utils.get_rect_coordinates(rect)
+    restored_p1 = (left, -top)
+    restored_p2 = (right, -bottom)
+    return [restored_p1, restored_p2]
+
+
+def rectangles_sort_key(rect):
+    left, top, right, bottom = Utils.get_rect_coordinates(rect)
+    return left + top * top
+
+
 class Utils:
     @staticmethod
     def generate_random_color():
@@ -92,3 +104,10 @@ class Utils:
         res_right = rect_input[1][0]
         res_bottom = rect_input[1][1]
         return res_left, res_top, res_right, res_bottom
+
+    @staticmethod
+    def sort_rectangles(rects):
+        rects_converted = list(map(convert_coordinate, rects))
+        rects_sorted = sorted(rects_converted, key=rectangles_sort_key)
+        rects_restored = list(map(convert_coordinate, rects_sorted))
+        return rects_restored
