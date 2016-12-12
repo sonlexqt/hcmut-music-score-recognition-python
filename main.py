@@ -14,7 +14,7 @@ IMG_4 = 'silent-night'
 IMG_5 = 'we-wish-you-a-merry-xmas'
 IMG_6 = 'jingle-bells'
 IMG_EXTENSION = '.jpg'
-IMG_TEST = IMG_6
+IMG_TEST = IMG_5
 IMG_FILE = IMG_PATH + IMG_TEST + IMG_EXTENSION
 
 """""""""""""""""""""""""""""""""""""""
@@ -33,6 +33,8 @@ REC_LINE_WIDTH = 2
 SPACE_BAR_KEY = 32
 HISTOGRAM_BINARY_RATIO = 2
 BAR_WIDTH_RATIO = 7
+DOT_HEIGHT_RATIO = 5
+TREBLE_CLEF_HEIGHT_RATIO = 1.65
 BAR_HEIGHT_REL_TOL = 0.1
 DEFAULT_SYMBOL_SIZE_WIDTH = 50
 DEFAULT_SYMBOL_SIZE_HEIGHT = 50
@@ -316,7 +318,7 @@ def get_connected_components():
     connectivity = 8
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(thresh, connectivity, cv2.CV_32S)
     rects_init = []
-    rects_result = []
+    rects_merged = []
     for i in range(0, num_labels):
         left = stats[i, cv2.CC_STAT_LEFT]
         top = stats[i, cv2.CC_STAT_TOP]
@@ -332,14 +334,14 @@ def get_connected_components():
         rects_init.append([reversed_p1, reversed_p2])
     # TODO XIN need to remove the biggest rectangle (this won't happen in C++)
     rects_init.pop(0)
-    rects_result = Utils.remove_overlapping_rectangles(rects_init)
+    rects_merged = Utils.remove_overlapping_rectangles(rects_init)
 
-    print('rects_result')
-    print(rects_result)
-    print(len(rects_result))
-    # rects_result = Utils.sort_rectangles(rects_result)
+    print('rects_merged')
+    print(rects_merged)
+    print(len(rects_merged))
+    # rects_merged = Utils.sort_rectangles(rects_merged)
 
-    for i, rect in enumerate(rects_result):
+    for i, rect in enumerate(rects_merged):
         left, top, right, bottom = Utils.get_rect_coordinates(rect)
         # p1 = (left, top)
         # p2 = (right, bottom)
@@ -349,28 +351,42 @@ def get_connected_components():
         rect_width = abs(right - left)
         rect_height = abs(top - bottom)
 
-        # TODO XIN crop the rect from the image
-        y = restored_p1[1]
-        x = restored_p1[0]
-        sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
-        _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
-        sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
-        cv2.imwrite('images/symbols/new/' + IMG_TEST + '-rect-' + str(i) + IMG_EXTENSION, sub_image_resized)
-        cv2.putText(img_without_staff_lines_rgb, str(i), (int(x + rect_width / 4), y + rect_height + 10),
-                    cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255))
+        # # TODO XIN crop the rect from the image
+        # y = restored_p1[1]
+        # x = restored_p1[0]
+        # sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
+        # _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
+        # sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
+        # cv2.imwrite('images/symbols/new/' + IMG_TEST + '-rect-' + str(i) + IMG_EXTENSION, sub_image_resized)
+        # cv2.putText(img_without_staff_lines_rgb, str(i), (int(x + rect_width / 4), y + rect_height + 10),
+        #             cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255))
 
         estimated_bar_width = staff_line_width * BAR_WIDTH_RATIO
         if rect_width <= estimated_bar_width:
             # Check if this is a bar
             if math.isclose(staff_height, rect_height, rel_tol=BAR_HEIGHT_REL_TOL):
-                # If this is a bar, draw a blue rectangle
+                # If it is, draw a blue rectangle
                 cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 0, 0), 1, 8, 0)
             else:
-                # Else, draw a green rectangle
-                cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 255, 0), 1, 8, 0)
-            continue
-        # Else, draw a red rectangle
-        cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
+                # Check if this is a dot
+                estimated_dot_height = staff_line_width * DOT_HEIGHT_RATIO
+                if rect_height <= estimated_dot_height:
+                    # If it is, draw a green rectangle
+                    cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 255, 0), 1, 8, 0)
+                else:
+                    # Else, draw a cyan rectangle
+                    cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 255, 0), 1, 8, 0)
+        else:
+            # Else:
+            # Check if this is a treble clef
+            # TODO XIN need to find a better way
+            estimated_treble_clef_height = staff_height * TREBLE_CLEF_HEIGHT_RATIO
+            if rect_height >= estimated_treble_clef_height:
+                # Draw a purple rectangle
+                cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 102, 255), 1, 8, 0)
+            else:
+                # Else, draw a red rectangle
+                cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
     cv2.imshow(WTITLE_CONNECTED_COMPONENTS, img_without_staff_lines_rgb)
     cv2.waitKey(0)
     return 0
