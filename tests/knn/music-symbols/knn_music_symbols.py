@@ -45,10 +45,10 @@ print("accuracy", accuracy)
 
 # Test the result with a new comer
 file_name = 'symbol_5.jpg'
-digit = cv2.imread(file_name)
-digit_gray = cv2.cvtColor(digit, cv2.COLOR_BGR2GRAY)
-digit_np_array = np.array(digit_gray)
-new_comer = digit_np_array.reshape(-1)[:, np.newaxis].astype(np.float32).T  # size (1, 2500) {train: (210, 2500)}
+symbol = cv2.imread(file_name)
+symbol_gray = cv2.cvtColor(symbol, cv2.COLOR_BGR2GRAY)
+symbol_np_array = np.array(symbol_gray)
+new_comer = symbol_np_array.reshape(-1)[:, np.newaxis].astype(np.float32).T  # size (1, 2500) {train: (210, 2500)}
 ret, results, neighbours, dist = knn.findNearest(new_comer, k=5)
 print(">>> file name:", file_name)
 print("results:", results)

@@ -29,7 +29,7 @@ knn = cv2.ml.KNearest_create()
 knn.train(train, cv2.ml.ROW_SAMPLE, train_labels)
 ret, result, neighbours, dist = knn.findNearest(test, k=5)
 
-file_name = 'digit_4.png'
+file_name = 'digit_3.png'
 digit = cv2.imread(file_name)
 digit_gray = cv2.cvtColor(digit, cv2.COLOR_BGR2GRAY)
 digit_np_array = np.array(digit_gray)

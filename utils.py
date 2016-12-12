@@ -1,4 +1,11 @@
+from symbols import Symbols
 from random import randint
+import numpy as np
+import cv2
+
+train = None
+train_labels = None
+knn = None
 
 
 def union(rect1, rect2):
@@ -111,3 +118,23 @@ class Utils:
         rects_sorted = sorted(rects_converted, key=rectangles_sort_key)
         rects_restored = list(map(convert_coordinate, rects_sorted))
         return rects_restored
+
+    @staticmethod
+    def init_knn():
+        global train, train_labels, knn
+        # Load the data
+        with np.load('symbols_knn_data.npz') as data:
+            train = data['train']
+            train_labels = data['train_labels']
+        knn = cv2.ml.KNearest_create()
+        knn.train(train, cv2.ml.ROW_SAMPLE, train_labels)
+
+    @staticmethod
+    def recognize_symbol(symbol_img):
+        global knn
+        symbol_gray = cv2.cvtColor(symbol_img, cv2.COLOR_BGR2GRAY)
+        symbol_np_array = np.array(symbol_gray)
+        new_comer = symbol_np_array.reshape(-1)[:, np.newaxis].astype(np.float32).T
+        ret, results, neighbours, dist = knn.findNearest(new_comer, k=5)
+        result_int = int(results[0][0])
+        return Symbols.get(result_int)
