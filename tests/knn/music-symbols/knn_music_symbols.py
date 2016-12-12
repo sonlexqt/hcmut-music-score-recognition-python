@@ -23,16 +23,34 @@ k = np.arange(21)
 train_labels = np.repeat(k, 210 / 21)[:, np.newaxis]  # size = (210, 1)
 test_labels = train_labels.copy()
 
+# save the data
+np.savez('symbols_knn_data.npz', train=train, train_labels=train_labels)
+# Now load the data
+with np.load('symbols_knn_data.npz') as data:
+    train = data['train']
+    train_labels = data['train_labels']
+
 # Initiate the kNN, train the data, then test it with test data for k=1
 knn = cv2.ml.KNearest_create()
 # cv2.ml.ROW_SAMPLE means a single sample occupies one row
 knn.train(train, cv2.ml.ROW_SAMPLE, train_labels)
 ret, result, neighbours, dist = knn.findNearest(test, k=5)
 
-# TODO XIN omit the 'new_comer' part
 # Check the accuracy of classification
 # For that, compare the result with test_labels and check which are wrong
 matches = result == test_labels
 correct = np.count_nonzero(matches)
 accuracy = correct * 100.0 / result.size
 print("accuracy", accuracy)
+
+# Test the result with a new comer
+file_name = 'symbol_5.jpg'
+digit = cv2.imread(file_name)
+digit_gray = cv2.cvtColor(digit, cv2.COLOR_BGR2GRAY)
+digit_np_array = np.array(digit_gray)
+new_comer = digit_np_array.reshape(-1)[:, np.newaxis].astype(np.float32).T  # size (1, 2500) {train: (210, 2500)}
+ret, results, neighbours, dist = knn.findNearest(new_comer, k=5)
+print(">>> file name:", file_name)
+print("results:", results)
+print("neighbours:", neighbours)
+print("distance:", dist)
