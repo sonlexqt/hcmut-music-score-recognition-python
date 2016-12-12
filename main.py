@@ -6,13 +6,16 @@ from utils import Utils
 """""""""""""""""""""""""""""""""""""""
 FOR TESTING
 """""""""""""""""""""""""""""""""""""""
-IMG_1 = 'images/scores/auld-lang-syne.jpg'
-IMG_2 = 'images/scores/auld-lang-syne-2.jpg'
-IMG_3 = 'images/scores/happy-birthday.jpg'
-IMG_4 = 'images/scores/silent-night.jpg'
-IMG_5 = 'images/scores/we-wish-you-a-merry-xmas.jpg'
-IMG_6 = 'images/scores/jingle-bells.jpg'
-IMG_FILE = IMG_3
+IMG_PATH = 'images/scores/'
+IMG_1 = 'auld-lang-syne'
+IMG_2 = 'auld-lang-syne-2'
+IMG_3 = 'happy-birthday'
+IMG_4 = 'silent-night'
+IMG_5 = 'we-wish-you-a-merry-xmas'
+IMG_6 = 'jingle-bells'
+IMG_EXTENSION = '.jpg'
+IMG_TEST = IMG_6
+IMG_FILE = IMG_PATH + IMG_TEST + IMG_EXTENSION
 
 """""""""""""""""""""""""""""""""""""""
 CONSTANTS
@@ -31,6 +34,8 @@ SPACE_BAR_KEY = 32
 HISTOGRAM_BINARY_RATIO = 2
 BAR_WIDTH_RATIO = 7
 BAR_HEIGHT_REL_TOL = 0.1
+DEFAULT_SYMBOL_SIZE_WIDTH = 50
+DEFAULT_SYMBOL_SIZE_HEIGHT = 50
 
 """""""""""""""""""""""""""""""""""""""
 GLOBAL VARIABLES
@@ -348,8 +353,11 @@ def get_connected_components():
         y = restored_p1[1]
         x = restored_p1[0]
         sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
-        cv2.imwrite('images/symbols/rect-' + str(i) + '.jpg', sub_image)
-        # cv2.putText(img_without_staff_lines_rgb, str(i), (int(x + rect_width / 4), y + rect_height + 10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255))
+        _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
+        sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
+        cv2.imwrite('images/symbols/new/' + IMG_TEST + '-rect-' + str(i) + IMG_EXTENSION, sub_image_resized)
+        cv2.putText(img_without_staff_lines_rgb, str(i), (int(x + rect_width / 4), y + rect_height + 10),
+                    cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255))
 
         estimated_bar_width = staff_line_width * BAR_WIDTH_RATIO
         if rect_width <= estimated_bar_width:
