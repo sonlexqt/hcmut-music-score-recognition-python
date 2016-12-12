@@ -1,7 +1,7 @@
 def get_symbol_by_index(idx):
     symbol = 'NOT_FOUND'
     if idx is 0:
-        symbol = 'TREBLE_CLEF'
+        symbol = 'DOT'
     elif idx is 1:
         symbol = 'SHARP'
     elif idx is 2:
@@ -29,7 +29,7 @@ def get_symbol_by_index(idx):
     elif idx is 13:
         symbol = 'SHARP_DOUBLE'
     elif idx is 14:
-        symbol = 'DOT'
+        symbol = 'TREBLE_CLEF'
     elif idx is 15:
         symbol = 'EIGHT_NOTE'
     elif idx is 16:
