@@ -3,6 +3,7 @@ import numpy as np
 import math
 from utils import Utils
 from symbols import Symbols
+import copy
 
 """""""""""""""""""""""""""""""""""""""
 FOR TESTING
@@ -351,10 +352,6 @@ def get_connected_components():
         # Draw a red rectangle for each symbol
         cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
 
-    print('rects_merged')
-    print(rects_merged)
-    print(len(rects_merged))
-
     cv2.imshow(WTITLE_CONNECTED_COMPONENTS, img_without_staff_lines_rgb)
     cv2.waitKey(0)
     return 0
@@ -392,14 +389,10 @@ def recognize_symbols():
     treble_clefs = Utils.sort_treble_clefts(treble_clefs)
     # Remove all the other rectangles outside of the treble clefs
     rects_symbols = Utils.remove_other_rectangles(rects_merged, treble_clefs)
-    print('rects_symbols')
-    print(rects_symbols)
-    print(len(rects_symbols))
     # Sort the symbols into groups (or staffs)
     rects_sorted = Utils.sort_rectangles(rects_symbols, treble_clefs, staff_lines, staff_height)
-    print('rects_sorted')
-    print(rects_sorted)
-    print(len(rects_sorted))
+
+    rects_recognized = copy.deepcopy(rects_sorted)
 
     for group_index, group in enumerate(rects_sorted):
         for i, rect in enumerate(group):
@@ -411,46 +404,35 @@ def recognize_symbols():
             rect_height = abs(top - bottom)
             x = restored_p1[0]
             y = restored_p1[1]
+            # cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
+            # cv2.putText(img_without_staff_lines_rgb, str(i), (int(x + rect_width / 4), y + rect_height + 10),
+            #             cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
+            estimated_bar_width = staff_line_width * BAR_WIDTH_RATIO
+            if rect_width <= estimated_bar_width:
+                # Check if this is a bar
+                if math.isclose(staff_height, rect_height, rel_tol=BAR_HEIGHT_REL_TOL):
+                    rects_recognized[group_index][i] = Symbols.get(5)
+                else:
+                    # Check if this is a dot
+                    estimated_dot_height = staff_line_width * DOT_HEIGHT_RATIO
+                    if rect_height <= estimated_dot_height:
+                        rects_recognized[group_index][i] = Symbols.get(0)
+                    else:
+                        rects_recognized[group_index][i] = Symbols.get(-1)
+            else:
+                # Else
+                sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
+                _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
+                sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
+                rects_recognized[group_index][i] = Utils.recognize_symbol(sub_image_resized)
+            # Draw a red rectangle for each symbol
             cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
-            cv2.putText(img_without_staff_lines_rgb, str(i), (int(x + rect_width / 4), y + rect_height + 10),
-                        cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
+            # cv2.putText(img_without_staff_lines_rgb, rects_recognized[group_index][i],
+            #             (int(x + rect_width / 4), y + rect_height + 10),
+            #             cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
 
-    # # This is the array containing the recognition result
-    # rects_recognized = [0] * len(rects_symbols)
-    #
-    # for i, rect in enumerate(rects_symbols):
-    #     left, top, right, bottom = Utils.get_rect_coordinates(rect)
-    #     # p1 = (left, top)
-    #     # p2 = (right, bottom)
-    #     # Now need to convert the Descartes coordinate system back to the OpenCV coordinate system
-    #     restored_p1 = (left, -top)
-    #     restored_p2 = (right, -bottom)
-    #     rect_width = abs(right - left)
-    #     rect_height = abs(top - bottom)
-    #     y = restored_p1[1]
-    #     x = restored_p1[0]
-    #     estimated_bar_width = staff_line_width * BAR_WIDTH_RATIO
-    #     if rect_width <= estimated_bar_width:
-    #         # Check if this is a bar
-    #         if math.isclose(staff_height, rect_height, rel_tol=BAR_HEIGHT_REL_TOL):
-    #             rects_recognized[i] = Symbols.get(5)
-    #         else:
-    #             # Check if this is a dot
-    #             estimated_dot_height = staff_line_width * DOT_HEIGHT_RATIO
-    #             if rect_height <= estimated_dot_height:
-    #                 rects_recognized[i] = Symbols.get(0)
-    #             else:
-    #                 rects_recognized[i] = Symbols.get(-1)
-    #     else:
-    #         # Else
-    #         sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
-    #         _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
-    #         sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
-    #         rects_recognized[i] = Utils.recognize_symbol(sub_image_resized)
-    #     # Draw a red rectangle for each symbol
-    #     cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
-    #     cv2.putText(img_without_staff_lines_rgb, rects_recognized[i], (int(x + rect_width / 4), y + rect_height + 10),
-    #                 cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
+    print('rects_recognized')
+    print(rects_recognized)
 
     cv2.imshow(WTITLE_RECOGNIZED_SYMBOLS, img_without_staff_lines_rgb)
     cv2.waitKey(0)
