@@ -92,10 +92,10 @@ def treble_clefs_sort_key(treble_clef):
     return top
 
 
-def is_rect_out_of_bounds(rect, upper_bound, lower_bound):
+def is_rect_out_of_bounds(rect, upper_bound, lower_bound, buffer):
     rect_converted = convert_coordinate(rect)
     left, top, right, bottom = Utils.get_rect_coordinates(rect_converted)
-    if bottom < upper_bound or top > lower_bound:
+    if bottom < upper_bound or top > lower_bound + buffer:
         return True
     else:
         return False
@@ -174,5 +174,7 @@ class Utils:
         last_tc_converted = convert_coordinate(last_tc)
         left2, top2, right2, bottom2 = Utils.get_rect_coordinates(last_tc_converted)
         lower_bound = bottom2
-        result = [rect for rect in rects_merged if not is_rect_out_of_bounds(rect, upper_bound, lower_bound)]
+        # This is a "buffer", used for keeping some symbols that should not be removed
+        buffer = bottom2 - top2
+        result = [rect for rect in rects_merged if not is_rect_out_of_bounds(rect, upper_bound, lower_bound, buffer)]
         return result

@@ -15,7 +15,7 @@ IMG_4 = 'silent-night'
 IMG_5 = 'we-wish-you-a-merry-xmas'
 IMG_6 = 'jingle-bells'
 IMG_EXTENSION = '.jpg'
-IMG_TEST = IMG_3
+IMG_TEST = IMG_4
 IMG_FILE = IMG_PATH + IMG_TEST + IMG_EXTENSION
 
 """""""""""""""""""""""""""""""""""""""
