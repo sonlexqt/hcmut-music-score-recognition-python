@@ -28,6 +28,7 @@ WTITLE_IMG_ROTATED = "Rotated image"
 WTITLE_IMG_ROTATED_THRESH = "Rotated image thresh"
 WTITLE_IMG_WITHOUT_STAFFLINES = "Image without staff lines"
 WTITLE_CONNECTED_COMPONENTS = "Connected components"
+WTITLE_RECOGNIZED_SYMBOLS = "Recognized symbols"
 MAX_ROTATION_ANGLE = 30
 MIN_ROTATION_ANGLE = - MAX_ROTATION_ANGLE
 REC_LINE_WIDTH = 2
@@ -46,8 +47,8 @@ GLOBAL VARIABLES
 is_dragging = False
 is_roi_selected = False
 is_roi_img_shown = False
-roi_ref_points = []
-staff_lines = []
+roi_ref_points = []  # Contains the two ref points of the ROI
+staff_lines = []  # The rects containing the staff lines
 staff_line_width = 0
 staff_line_space = 0
 staff_height = 0
@@ -57,6 +58,9 @@ img_roi = None
 img_candidate_points = None
 img_rotated = None
 img_without_staff_lines = None
+# The rectangles containing the symbols
+rects_merged = []
+rects_recognized = []
 
 """""""""""""""""""""""""""""""""""""""
 HELPER FUNCTIONS
@@ -312,13 +316,13 @@ def adaptive_removal():
 
 def get_connected_components():
     # Step 6
-    global img_without_staff_lines, staff_line_width, staff_height
+    global img_without_staff_lines, staff_line_width, staff_height, rects_merged
     img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
     _, thresh = cv2.threshold(img_without_staff_lines, 127, 255, cv2.THRESH_BINARY_INV)
     connectivity = 8
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(thresh, connectivity, cv2.CV_32S)
     rects_init = []
-    rects_merged = []
+
     for i in range(0, num_labels):
         left = stats[i, cv2.CC_STAT_LEFT]
         top = stats[i, cv2.CC_STAT_TOP]
@@ -332,13 +336,33 @@ def get_connected_components():
         reversed_p1 = (left, -top)
         reversed_p2 = (right, -bottom)
         rects_init.append([reversed_p1, reversed_p2])
+
     # Need to remove the biggest rectangle (this won't happen in C++)
     rects_init.pop(0)
     rects_merged = Utils.remove_overlapping_rectangles(rects_init)
+
+    for i, rect in enumerate(rects_merged):
+        left, top, right, bottom = Utils.get_rect_coordinates(rect)
+        # p1 = (left, top)
+        # p2 = (right, bottom)
+        # Now need to convert the Descartes coordinate system back to the OpenCV coordinate system
+        restored_p1 = (left, -top)
+        restored_p2 = (right, -bottom)
+        # Draw a red rectangle for each symbol
+        cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
+
     print('rects_merged')
     print(rects_merged)
     print(len(rects_merged))
 
+    cv2.imshow(WTITLE_CONNECTED_COMPONENTS, img_without_staff_lines_rgb)
+    cv2.waitKey(0)
+    return 0
+
+
+def recognize_symbols():
+    global rects_merged, rects_recognized, img_without_staff_lines
+    img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
     treble_clefs = []
     # Initialize the kNN system
     Utils.init_knn()
@@ -352,13 +376,11 @@ def get_connected_components():
         restored_p2 = (right, -bottom)
         rect_width = abs(right - left)
         rect_height = abs(top - bottom)
-
         y = restored_p1[1]
         x = restored_p1[0]
         sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
         _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
         sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
-
         estimated_treble_clef_height = staff_height * TREBLE_CLEF_HEIGHT_RATIO
         if rect_height >= estimated_treble_clef_height:
             # This one has a big chance of being a treble clef
@@ -369,15 +391,14 @@ def get_connected_components():
     # Sort the treble clefs by their position
     treble_clefs = Utils.sort_treble_clefts(treble_clefs)
     # Remove all the other rectangles outside of the treble clefs
-    rects_symbols_only = Utils.remove_other_rectangles(rects_merged, treble_clefs)
-    print('rects_symbols_only')
-    print(rects_symbols_only)
-    print(len(rects_symbols_only))
-
+    rects_symbols = Utils.remove_other_rectangles(rects_merged, treble_clefs)
+    print('rects_symbols')
+    print(rects_symbols)
+    print(len(rects_symbols))
     # This is the array containing the recognition result
-    rects_recognized = [0] * len(rects_symbols_only)
+    rects_recognized = [0] * len(rects_symbols)
 
-    for i, rect in enumerate(rects_symbols_only):
+    for i, rect in enumerate(rects_symbols):
         left, top, right, bottom = Utils.get_rect_coordinates(rect)
         # p1 = (left, top)
         # p2 = (right, bottom)
@@ -386,10 +407,8 @@ def get_connected_components():
         restored_p2 = (right, -bottom)
         rect_width = abs(right - left)
         rect_height = abs(top - bottom)
-
         y = restored_p1[1]
         x = restored_p1[0]
-
         estimated_bar_width = staff_line_width * BAR_WIDTH_RATIO
         if rect_width <= estimated_bar_width:
             # Check if this is a bar
@@ -411,9 +430,9 @@ def get_connected_components():
         # Draw a red rectangle for each symbol
         cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
         cv2.putText(img_without_staff_lines_rgb, rects_recognized[i], (int(x + rect_width / 4), y + rect_height + 10),
-                    cv2.FONT_HERSHEY_PLAIN, 0.5, (0, 0, 255))
+                    cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
 
-    cv2.imshow(WTITLE_CONNECTED_COMPONENTS, img_without_staff_lines_rgb)
+    cv2.imshow(WTITLE_RECOGNIZED_SYMBOLS, img_without_staff_lines_rgb)
     cv2.waitKey(0)
     return 0
 
@@ -429,6 +448,7 @@ def main():
     rotation_angle_estimation()
     adaptive_removal()
     get_connected_components()
+    recognize_symbols()
 
 if __name__ == '__main__':
     main()
