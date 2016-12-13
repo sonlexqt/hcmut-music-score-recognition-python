@@ -82,9 +82,9 @@ def convert_coordinate(rect):
     return [restored_p1, restored_p2]
 
 
-def rectangles_sort_key(rect):
+def symbols_in_group_sort_key(rect):
     left, top, right, bottom = Utils.get_rect_coordinates(rect)
-    return left + top * top
+    return left
 
 
 def treble_clefs_sort_key(treble_clef):
@@ -92,10 +92,10 @@ def treble_clefs_sort_key(treble_clef):
     return top
 
 
-def is_rect_out_of_bounds(rect, upper_bound, lower_bound, buffer):
+def is_rect_in_bounds(rect, upper_bound, lower_bound):
     rect_converted = convert_coordinate(rect)
     left, top, right, bottom = Utils.get_rect_coordinates(rect_converted)
-    if bottom < upper_bound or top > lower_bound + buffer:
+    if upper_bound < top < lower_bound:
         return True
     else:
         return False
@@ -131,11 +131,26 @@ class Utils:
         return res_left, res_top, res_right, res_bottom
 
     @staticmethod
-    def sort_rectangles(rects):
-        rects_converted = list(map(convert_coordinate, rects))
-        rects_sorted = sorted(rects_converted, key=rectangles_sort_key)
-        rects_restored = list(map(convert_coordinate, rects_sorted))
-        return rects_restored
+    def sort_rectangles(rects, treble_clefs, staff_lines, staff_height):
+        res = []
+        for idx, treble_clef in enumerate(treble_clefs):
+            # Create a new symbols group
+            symbols_group = []
+            # Get this treble position
+            treble_clef_converted = convert_coordinate(treble_clef)
+            left, top, right, bottom = Utils.get_rect_coordinates(treble_clef_converted)
+            # Buffer the position each direction by 1/2 staff height
+            buffer = staff_height / 2
+            # Get the bounds
+            upper_bound = top - buffer
+            lower_bound = bottom + buffer
+            # Push symbols to this group, including this treble clef
+            symbols_group = [rect for rect in rects if is_rect_in_bounds(rect, upper_bound, lower_bound)]
+            # Sort this symbols group base on rect.x value
+            symbols_group_sorted = sorted(symbols_group, key=symbols_in_group_sort_key)
+            # Push this symbols group to res
+            res.append(symbols_group_sorted)
+        return res
 
     @staticmethod
     def init_knn():
@@ -169,12 +184,15 @@ class Utils:
         first_tc = treble_clefs[0]
         first_tc_converted = convert_coordinate(first_tc)
         left1, top1, right1, bottom1 = Utils.get_rect_coordinates(first_tc_converted)
-        upper_bound = top1
+
         last_tc = treble_clefs[len(treble_clefs) - 1]
         last_tc_converted = convert_coordinate(last_tc)
         left2, top2, right2, bottom2 = Utils.get_rect_coordinates(last_tc_converted)
-        lower_bound = bottom2
         # This is a "buffer", used for keeping some symbols that should not be removed
         buffer = bottom2 - top2
-        result = [rect for rect in rects_merged if not is_rect_out_of_bounds(rect, upper_bound, lower_bound, buffer)]
+        # Define the bounds
+        upper_bound = top1 - buffer
+        lower_bound = bottom2 + buffer
+        # Only get the symbols between the bounds
+        result = [rect for rect in rects_merged if is_rect_in_bounds(rect, upper_bound, lower_bound)]
         return result
