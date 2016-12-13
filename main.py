@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import math
 from utils import Utils
+from symbols import Symbols
 
 """""""""""""""""""""""""""""""""""""""
 FOR TESTING
@@ -14,7 +15,7 @@ IMG_4 = 'silent-night'
 IMG_5 = 'we-wish-you-a-merry-xmas'
 IMG_6 = 'jingle-bells'
 IMG_EXTENSION = '.jpg'
-IMG_TEST = IMG_5
+IMG_TEST = IMG_3
 IMG_FILE = IMG_PATH + IMG_TEST + IMG_EXTENSION
 
 """""""""""""""""""""""""""""""""""""""
@@ -34,7 +35,7 @@ SPACE_BAR_KEY = 32
 HISTOGRAM_BINARY_RATIO = 2
 BAR_WIDTH_RATIO = 7
 DOT_HEIGHT_RATIO = 5
-TREBLE_CLEF_HEIGHT_RATIO = 1.65
+TREBLE_CLEF_HEIGHT_RATIO = 1.5
 BAR_HEIGHT_REL_TOL = 0.1
 DEFAULT_SYMBOL_SIZE_WIDTH = 50
 DEFAULT_SYMBOL_SIZE_HEIGHT = 50
@@ -243,7 +244,6 @@ def rotation_angle_estimation():
     rotation_matrix = cv2.getRotationMatrix2D(img_center, min_angle, 1.0)
     # Maintain white background when using OpenCV warpAffine
     # (src, M, dsize, dst=None, flags=None, borderMode=None, borderValue=None)
-    # TODO XIN fix rotated_img offset problem
     img_rotated = cv2.warpAffine(img, rotation_matrix, (img_width, img_height),
                                  cv2.INTER_AREA, cv2.BORDER_DEFAULT, cv2.BORDER_REPLICATE)
     cv2.imshow(WTITLE_IMG_ROTATED, img_rotated)
@@ -332,14 +332,16 @@ def get_connected_components():
         reversed_p1 = (left, -top)
         reversed_p2 = (right, -bottom)
         rects_init.append([reversed_p1, reversed_p2])
-    # TODO XIN need to remove the biggest rectangle (this won't happen in C++)
+    # Need to remove the biggest rectangle (this won't happen in C++)
     rects_init.pop(0)
     rects_merged = Utils.remove_overlapping_rectangles(rects_init)
-
     print('rects_merged')
     print(rects_merged)
     print(len(rects_merged))
-    # rects_merged = Utils.sort_rectangles(rects_merged)
+
+    treble_clefs = []
+    # Initialize the kNN system
+    Utils.init_knn()
 
     for i, rect in enumerate(rects_merged):
         left, top, right, bottom = Utils.get_rect_coordinates(rect)
@@ -351,42 +353,66 @@ def get_connected_components():
         rect_width = abs(right - left)
         rect_height = abs(top - bottom)
 
-        # # TODO XIN crop the rect from the image
-        # y = restored_p1[1]
-        # x = restored_p1[0]
-        # sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
-        # _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
-        # sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
-        # cv2.imwrite('images/symbols/new/' + IMG_TEST + '-rect-' + str(i) + IMG_EXTENSION, sub_image_resized)
-        # cv2.putText(img_without_staff_lines_rgb, str(i), (int(x + rect_width / 4), y + rect_height + 10),
-        #             cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255))
+        y = restored_p1[1]
+        x = restored_p1[0]
+        sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
+        _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
+        sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
+
+        estimated_treble_clef_height = staff_height * TREBLE_CLEF_HEIGHT_RATIO
+        if rect_height >= estimated_treble_clef_height:
+            # This one has a big chance of being a treble clef
+            # Check if it's really a treble clef
+            if Utils.recognize_symbol(sub_image_resized) == Symbols.get(14):  # 14 is index of TREBLE_CLEF
+                treble_clefs.append(rect)
+
+    # Sort the treble clefs by their position
+    treble_clefs = Utils.sort_treble_clefts(treble_clefs)
+    # Remove all the other rectangles outside of the treble clefs
+    rects_symbols_only = Utils.remove_other_rectangles(rects_merged, treble_clefs)
+    print('rects_symbols_only')
+    print(rects_symbols_only)
+    print(len(rects_symbols_only))
+
+    # This is the array containing the recognition result
+    rects_recognized = [0] * len(rects_symbols_only)
+
+    for i, rect in enumerate(rects_symbols_only):
+        left, top, right, bottom = Utils.get_rect_coordinates(rect)
+        # p1 = (left, top)
+        # p2 = (right, bottom)
+        # Now need to convert the Descartes coordinate system back to the OpenCV coordinate system
+        restored_p1 = (left, -top)
+        restored_p2 = (right, -bottom)
+        rect_width = abs(right - left)
+        rect_height = abs(top - bottom)
+
+        y = restored_p1[1]
+        x = restored_p1[0]
 
         estimated_bar_width = staff_line_width * BAR_WIDTH_RATIO
         if rect_width <= estimated_bar_width:
             # Check if this is a bar
             if math.isclose(staff_height, rect_height, rel_tol=BAR_HEIGHT_REL_TOL):
-                # If it is, draw a blue rectangle
-                cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 0, 0), 1, 8, 0)
+                rects_recognized[i] = Symbols.get(5)
             else:
                 # Check if this is a dot
                 estimated_dot_height = staff_line_width * DOT_HEIGHT_RATIO
                 if rect_height <= estimated_dot_height:
-                    # If it is, draw a green rectangle
-                    cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 255, 0), 1, 8, 0)
+                    rects_recognized[i] = Symbols.get(0)
                 else:
-                    # Else, draw a cyan rectangle
-                    cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 255, 0), 1, 8, 0)
+                    rects_recognized[i] = Symbols.get(-1)
         else:
-            # Else:
-            # Check if this is a treble clef
-            # TODO XIN need to find a better way
-            estimated_treble_clef_height = staff_height * TREBLE_CLEF_HEIGHT_RATIO
-            if rect_height >= estimated_treble_clef_height:
-                # Draw a purple rectangle
-                cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 102, 255), 1, 8, 0)
-            else:
-                # Else, draw a red rectangle
-                cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
+            # Else
+            sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
+            _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
+            sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
+            rects_recognized[i] = Utils.recognize_symbol(sub_image_resized)
+        # Draw a red rectangle for each symbol
+        cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
+        cv2.putText(img_without_staff_lines_rgb, rects_recognized[i], (int(x + rect_width / 4), y + rect_height + 10),
+                    cv2.FONT_HERSHEY_PLAIN, 0.5, (0, 0, 255))
+
     cv2.imshow(WTITLE_CONNECTED_COMPONENTS, img_without_staff_lines_rgb)
     cv2.waitKey(0)
     return 0

@@ -87,6 +87,24 @@ def rectangles_sort_key(rect):
     return left + top * top
 
 
+def treble_clefs_sort_key(treble_clef):
+    left, top, right, bottom = Utils.get_rect_coordinates(treble_clef)
+    return top
+
+
+def is_rect_out_of_bounds(rect, upper_bound, lower_bound):
+    rect_converted = convert_coordinate(rect)
+    left, top, right, bottom = Utils.get_rect_coordinates(rect_converted)
+    if bottom < upper_bound or top > lower_bound:
+        return True
+    else:
+        return False
+
+"""
+MAIN CLASS
+"""
+
+
 class Utils:
     @staticmethod
     def generate_random_color():
@@ -132,9 +150,29 @@ class Utils:
     @staticmethod
     def recognize_symbol(symbol_img):
         global knn
-        symbol_gray = cv2.cvtColor(symbol_img, cv2.COLOR_BGR2GRAY)
-        symbol_np_array = np.array(symbol_gray)
+        # symbol_gray = cv2.cvtColor(symbol_img, cv2.COLOR_BGR2GRAY)
+        symbol_np_array = np.array(symbol_img)
         new_comer = symbol_np_array.reshape(-1)[:, np.newaxis].astype(np.float32).T
         ret, results, neighbours, dist = knn.findNearest(new_comer, k=5)
         result_int = int(results[0][0])
         return Symbols.get(result_int)
+
+    @staticmethod
+    def sort_treble_clefts(treble_clefs):
+        treble_clefs_converted = list(map(convert_coordinate, treble_clefs))
+        treble_clefs_sorted = sorted(treble_clefs_converted, key=treble_clefs_sort_key)
+        treble_clefs_restored = list(map(convert_coordinate, treble_clefs_sorted))
+        return treble_clefs_restored
+
+    @staticmethod
+    def remove_other_rectangles(rects_merged, treble_clefs):
+        first_tc = treble_clefs[0]
+        first_tc_converted = convert_coordinate(first_tc)
+        left1, top1, right1, bottom1 = Utils.get_rect_coordinates(first_tc_converted)
+        upper_bound = top1
+        last_tc = treble_clefs[len(treble_clefs) - 1]
+        last_tc_converted = convert_coordinate(last_tc)
+        left2, top2, right2, bottom2 = Utils.get_rect_coordinates(last_tc_converted)
+        lower_bound = bottom2
+        result = [rect for rect in rects_merged if not is_rect_out_of_bounds(rect, upper_bound, lower_bound)]
+        return result
