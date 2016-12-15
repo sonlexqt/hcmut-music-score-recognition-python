@@ -16,7 +16,7 @@ IMG_4 = 'silent-night'
 IMG_5 = 'we-wish-you-a-merry-xmas'
 IMG_6 = 'jingle-bells'
 IMG_EXTENSION = '.jpg'
-IMG_TEST = IMG_3
+IMG_TEST = IMG_1
 IMG_FILE = IMG_PATH + IMG_TEST + IMG_EXTENSION
 
 """""""""""""""""""""""""""""""""""""""
@@ -358,7 +358,7 @@ def get_connected_components():
 
 
 def recognize_symbols():
-    global rects_merged, rects_recognized, img_without_staff_lines
+    global rects_merged, rects_recognized, img_without_staff_lines, staff_lines, staff_height, staff_line_space
     img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
     treble_clefs = []
     # Initialize the kNN system
@@ -425,7 +425,16 @@ def recognize_symbols():
                 sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
                 _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
                 sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
-                rects_recognized[group_index][i] = Utils.recognize_symbol(sub_image_resized)
+                this_symbol = Utils.recognize_symbol(sub_image_resized)
+                rects_recognized[group_index][i] = this_symbol
+                if this_symbol.get_class_name() == 'note':
+                    # TODO XIN
+                    # This is a note
+                    # Draw a blue rectangle for each note
+                    cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 0, 0), 2, 8, 0)
+                    this_symbol.calculate_pitch(rect, group_index, i, staff_lines, staff_line_space)
+                    # print('=== symbol', i, 'staff', group_index, ':', this_symbol.get_pitch())
+
             # Draw a red rectangle for each symbol
             cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
             # cv2.putText(img_without_staff_lines_rgb, rects_recognized[group_index][i].get_name(),
@@ -434,6 +443,14 @@ def recognize_symbols():
 
     cv2.imshow(WTITLE_RECOGNIZED_SYMBOLS, img_without_staff_lines_rgb)
     cv2.waitKey(0)
+    return 0
+
+
+def save_as_structured_data():
+    # LXML
+    # http://stackoverflow.com/questions/2833185/write-xml-file-using-lxml-library-in-python
+    # http://stackoverflow.com/questions/3844360/best-way-to-generate-xml
+    # http://stackoverflow.com/questions/3605680/creating-a-simple-xml-file-using-python
     return 0
 
 """""""""""""""""""""""""""""""""""""""
@@ -449,6 +466,7 @@ def main():
     adaptive_removal()
     get_connected_components()
     recognize_symbols()
+    save_as_structured_data()
 
 if __name__ == '__main__':
     main()

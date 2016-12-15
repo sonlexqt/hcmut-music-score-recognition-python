@@ -75,13 +75,6 @@ def remove_duplicates(rects):
     return res
 
 
-def convert_coordinate(rect):
-    left, top, right, bottom = Utils.get_rect_coordinates(rect)
-    restored_p1 = (left, -top)
-    restored_p2 = (right, -bottom)
-    return [restored_p1, restored_p2]
-
-
 def symbols_in_group_sort_key(rect):
     left, top, right, bottom = Utils.get_rect_coordinates(rect)
     return left
@@ -93,7 +86,7 @@ def treble_clefs_sort_key(treble_clef):
 
 
 def is_rect_in_bounds(rect, upper_bound, lower_bound):
-    rect_converted = convert_coordinate(rect)
+    rect_converted = Utils.convert_coordinate(rect)
     left, top, right, bottom = Utils.get_rect_coordinates(rect_converted)
     if upper_bound < top < lower_bound:
         return True
@@ -137,7 +130,7 @@ class Utils:
             # Create a new symbols group
             symbols_group = []
             # Get this treble position
-            treble_clef_converted = convert_coordinate(treble_clef)
+            treble_clef_converted = Utils.convert_coordinate(treble_clef)
             left, top, right, bottom = Utils.get_rect_coordinates(treble_clef_converted)
             # Buffer the position each direction by 1/2 staff height
             buffer = staff_height / 2
@@ -174,19 +167,19 @@ class Utils:
 
     @staticmethod
     def sort_treble_clefts(treble_clefs):
-        treble_clefs_converted = list(map(convert_coordinate, treble_clefs))
+        treble_clefs_converted = list(map(Utils.convert_coordinate, treble_clefs))
         treble_clefs_sorted = sorted(treble_clefs_converted, key=treble_clefs_sort_key)
-        treble_clefs_restored = list(map(convert_coordinate, treble_clefs_sorted))
+        treble_clefs_restored = list(map(Utils.convert_coordinate, treble_clefs_sorted))
         return treble_clefs_restored
 
     @staticmethod
     def remove_other_rectangles(rects_merged, treble_clefs):
         first_tc = treble_clefs[0]
-        first_tc_converted = convert_coordinate(first_tc)
+        first_tc_converted = Utils.convert_coordinate(first_tc)
         left1, top1, right1, bottom1 = Utils.get_rect_coordinates(first_tc_converted)
 
         last_tc = treble_clefs[len(treble_clefs) - 1]
-        last_tc_converted = convert_coordinate(last_tc)
+        last_tc_converted = Utils.convert_coordinate(last_tc)
         left2, top2, right2, bottom2 = Utils.get_rect_coordinates(last_tc_converted)
         # This is a "buffer", used for keeping some symbols that should not be removed
         buffer = bottom2 - top2
@@ -196,3 +189,11 @@ class Utils:
         # Only get the symbols between the bounds
         result = [rect for rect in rects_merged if is_rect_in_bounds(rect, upper_bound, lower_bound)]
         return result
+
+    @staticmethod
+    def convert_coordinate(rect):
+        # Convert coordinate from the Descartes to OpenCV and vice versa
+        left, top, right, bottom = Utils.get_rect_coordinates(rect)
+        restored_p1 = (left, -top)
+        restored_p2 = (right, -bottom)
+        return [restored_p1, restored_p2]
