@@ -18,7 +18,7 @@ def noisy(noise_typ, image):
         s_vs_p = 0.5
         amount = 0.004
         # TODO XIN modify this amount value
-        amount = 0.001
+        amount = 0.002
         out = np.copy(image)
         # Salt mode
         num_salt = np.ceil(amount * image.size * s_vs_p)
@@ -41,7 +41,7 @@ def noisy(noise_typ, image):
         noisy = image + image * gauss
         return noisy
 
-img = cv2.imread('happy-birthday.jpg')
+img = cv2.imread('silent-night.jpg')
 cv2.imshow('IMG', img)
 noisy_img = noisy('s&p', img)
 noisy_img = cv2.cvtColor(noisy_img, cv2.COLOR_BGR2GRAY)
