@@ -382,7 +382,8 @@ def recognize_symbols():
         if rect_height >= estimated_treble_clef_height:
             # This one has a big chance of being a treble clef
             # Check if it's really a treble clef
-            if Utils.recognize_symbol(sub_image_resized) == Symbols.get(14):  # 14 is index of TREBLE_CLEF
+            recognized_sbl = Utils.recognize_symbol(sub_image_resized)
+            if recognized_sbl.get_name() == Symbols.get(14).get_name():  # 14 is index of TREBLE_CLEF
                 treble_clefs.append(rect)
 
     # Sort the treble clefs by their position
@@ -427,12 +428,9 @@ def recognize_symbols():
                 rects_recognized[group_index][i] = Utils.recognize_symbol(sub_image_resized)
             # Draw a red rectangle for each symbol
             cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
-            # cv2.putText(img_without_staff_lines_rgb, rects_recognized[group_index][i],
+            # cv2.putText(img_without_staff_lines_rgb, rects_recognized[group_index][i].get_name(),
             #             (int(x + rect_width / 4), y + rect_height + 10),
             #             cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
-
-    print('rects_recognized')
-    print(rects_recognized)
 
     cv2.imshow(WTITLE_RECOGNIZED_SYMBOLS, img_without_staff_lines_rgb)
     cv2.waitKey(0)
