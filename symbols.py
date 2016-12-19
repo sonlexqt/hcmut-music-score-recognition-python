@@ -9,8 +9,6 @@ def get_symbol_by_index(idx):
         # DOT
         symbol = SymbolsDot()
     elif idx is 1:
-        # # ACCIDENTAL_SHARP
-        # symbol = SymbolsAccidental('ACCIDENTAL_SHARP', 'sharp')
         # KEY_SIGNATURE_1_#
         symbol = SymbolsKeySignature('KEY_SIGNATURE_1_#', '2_#')
     elif idx is 2:
@@ -24,7 +22,7 @@ def get_symbol_by_index(idx):
         symbol = SymbolsTimeSignature('TIME_SIGNATURE_3_4', '3_4')
     elif idx is 5:
         # BAR
-        symbol = SymbolsBar('BAR', 'normal')
+        symbol = SymbolsBar('BAR_SINGLE', 'single')
     elif idx is 6:
         # NOTE_QUARTER_DOWN
         symbol = SymbolsNote('NOTE_QUARTER_DOWN', 1, 4, 'down', 0, False)
@@ -36,7 +34,7 @@ def get_symbol_by_index(idx):
         symbol = SymbolsNote('BEAM_2_EIGHTH_NOTES_DOWN', 2, 8, 'down', 0, False)
     elif idx is 9:
         # FINAL_BAR
-        symbol = SymbolsBar('FINAL_BAR', 'final')
+        symbol = SymbolsBar('BAR_DOUBLE', 'double')
     elif idx is 10:
         # REST_QUARTER
         symbol = SymbolsRest('REST_QUARTER', 4)

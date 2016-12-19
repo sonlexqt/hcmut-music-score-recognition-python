@@ -428,7 +428,6 @@ def recognize_symbols():
                 this_symbol = Utils.recognize_symbol(sub_image_resized)
                 rects_recognized[group_index][i] = this_symbol
                 if this_symbol.get_class_name() == 'note':
-                    # TODO XIN
                     # This is a note
                     # Draw a blue rectangle for each note
                     cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 0, 0), 2, 8, 0)
@@ -437,9 +436,9 @@ def recognize_symbols():
 
             # Draw a red rectangle for each symbol
             cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
-            # cv2.putText(img_without_staff_lines_rgb, rects_recognized[group_index][i].get_name(),
-            #             (int(x + rect_width / 4), y + rect_height + 10),
-            #             cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
+            cv2.putText(img_without_staff_lines_rgb, rects_recognized[group_index][i].get_name(),
+                        (int(x - rect_width / 2), y + rect_height + 10),
+                        cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
 
     cv2.imshow(WTITLE_RECOGNIZED_SYMBOLS, img_without_staff_lines_rgb)
     cv2.waitKey(0)
