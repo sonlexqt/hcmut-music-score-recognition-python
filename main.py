@@ -9,14 +9,15 @@ import copy
 FOR TESTING
 """""""""""""""""""""""""""""""""""""""
 IMG_PATH = 'images/scores/'
-IMG_1 = 'auld-lang-syne'
-IMG_2 = 'auld-lang-syne-2'
-IMG_3 = 'happy-birthday'
-IMG_4 = 'silent-night'
-IMG_5 = 'we-wish-you-a-merry-xmas'
-IMG_6 = 'jingle-bells'
+IMG_1 = '1-jingle-bells'
+IMG_2 = '2-silent-night'
+IMG_3 = '3-happy-birthday'
+IMG_4 = '4-we-wish-you-a-merry-christmas'
+IMG_5 = '5-auld-lang-syne'
+IMG_6 = 'new'
 IMG_EXTENSION = '.jpg'
-IMG_TEST = IMG_1
+# IMG_EXTENSION = '.png'
+IMG_TEST = IMG_5
 IMG_FILE = IMG_PATH + IMG_TEST + IMG_EXTENSION
 
 """""""""""""""""""""""""""""""""""""""
@@ -123,14 +124,53 @@ def calculate_entropy(pthetas_avg, length):
     return -res
 
 
-def get_staff_info(data):
-    global staff_lines, staff_line_space, staff_height
+def estimate_staff_info(img_rotated):
+    global staff_lines, staff_line_width, staff_line_space, staff_height
+    # Threshold the img_rotated before estimating
+    height, width = img_rotated.shape[:2]
+    pthetas = [0] * height
+    img_rotated_gray = cv2.cvtColor(img_rotated, cv2.COLOR_BGR2GRAY)
+    _, img_rotated_thresh = cv2.threshold(img_rotated_gray, 127, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    cv2.imshow(WTITLE_IMG_ROTATED_THRESH, img_rotated_thresh)
+
+    # Calculate horizontal projection
+    for h in range(0, height):
+        sum_of_rows = 0
+        for w in range(0, width):
+            sum_of_rows += img_rotated_thresh[h, w]
+        pthetas[h] = sum_of_rows
+
+    # Get the maximum of the projection(T)
+    T = pthetas[0]
+    for h in range(0, height):
+        if pthetas[h] > T:
+            T = pthetas[h]
+    # Then the projection is binarized using a threshold of half of the maximum
+    for h in range(0, height):
+        if pthetas[h] > (T / HISTOGRAM_BINARY_RATIO):
+            pthetas[h] = 255
+        else:
+            pthetas[h] = 0
+
+    # Estimate the staff_line_width
+    number_of_rows = 0
+    number_of_lines = 0
+    for h in range(0, height):
+        if pthetas[h] == 255:
+            number_of_rows += 1
+            if h >= 1 and pthetas[h - 1] != 255:
+                # Count this case as a new line
+                number_of_lines += 1
+    staff_line_width = number_of_rows / number_of_lines
+
+    # Estimate staff_lines, staff_line_space & staff_height
     staff_lines = []  # Contains elements with format (index, width)
     current_staff_index = -1
 
-    for i, value in enumerate(data):
+    # staff_lines
+    for i, value in enumerate(pthetas):
         if value == 255 and i > 0:
-            if data[i - 1] == 0:
+            if pthetas[i - 1] == 0:
                 current_staff_index += 1
                 staff_lines.append((i, 1))
             else:
@@ -146,20 +186,29 @@ def get_staff_info(data):
             continue
         else:
             last_staff_line = staff_lines[i - 1]
-            this_staff_line_space = this_staff_line[0] - last_staff_line[0]
+            this_staff_line_space = this_staff_line[0] - last_staff_line[0] - staff_line_width
             sum_staff_lines_space += this_staff_line_space
             if (i + 1) % 5 == 0:
                 # If this is the last line of a staff group
                 first_staff_line = staff_lines[i + 1 - 5]
-                this_staff_height = this_staff_line[0] - first_staff_line[0]
+                this_staff_height = this_staff_line[0] - first_staff_line[0] + staff_line_width
                 sum_staff_height += this_staff_height
 
     staff_groups = len(staff_lines) / 5
     num_staff_lines_space = len(staff_lines) - staff_groups
     avg_staff_line_space = sum_staff_lines_space / num_staff_lines_space
+    # staff_line_space
     staff_line_space = avg_staff_line_space
     avg_staff_height = sum_staff_height / staff_groups
+    # staff_height
     staff_height = avg_staff_height
+
+    print('=== Estimated staff lines data:')
+    print('staff_lines:')
+    print(staff_lines)
+    print('staff_line_width:', staff_line_width)
+    print('staff_line_space:', staff_line_space)
+    print('staff_height:', staff_height)
     return 0
 
 """""""""""""""""""""""""""""""""""""""
@@ -243,12 +292,12 @@ def rotation_angle_estimation():
             min_a = a
             min_entropy = entropy_ps[a]
             min_angle = min_a - MAX_ROTATION_ANGLE
-    print('Estimated rotation angle (deg):', min_angle)
+    print('=== Estimated rotation angle (deg):', min_angle)
     img_height, img_width = img.shape[:2]
     img_center = (img_height / 2, img_width / 2)
     rotation_matrix = cv2.getRotationMatrix2D(img_center, min_angle, 1.0)
     # Maintain white background when using OpenCV warpAffine
-    # (src, M, dsize, dst=None, flags=None, borderMode=None, borderValue=None)
+    # cv2.warpAffine(src, M, dsize, dst=None, flags=None, borderMode=None, borderValue=None)
     img_rotated = cv2.warpAffine(img, rotation_matrix, (img_width, img_height),
                                  cv2.INTER_AREA, cv2.BORDER_DEFAULT, cv2.BORDER_REPLICATE)
     cv2.imshow(WTITLE_IMG_ROTATED, img_rotated)
@@ -257,47 +306,18 @@ def rotation_angle_estimation():
 
 def adaptive_removal():
     # Step 5
-    global img_rotated, img_without_staff_lines, staff_line_width
-    height, width = img_rotated.shape[:2]
-    pthetas = [0] * height
+    global img_rotated, img_without_staff_lines, staff_line_width, staff_lines
     img_rotated_gray = cv2.cvtColor(img_rotated, cv2.COLOR_BGR2GRAY)
     _, img_rotated_thresh = cv2.threshold(img_rotated_gray, 127, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    cv2.imshow(WTITLE_IMG_ROTATED_THRESH, img_rotated_thresh)
-    # Calculate horizontal projection
-    for h in range(0, height):
-        sum_of_rows = 0
-        for w in range(0, width):
-            sum_of_rows += img_rotated_thresh[h, w]
-        pthetas[h] = sum_of_rows
-    # Get the maximum of the projection(T)
-    T = pthetas[0]
-    for h in range(0, height):
-        if pthetas[h] > T:
-            T = pthetas[h]
-    # Then the projection is binarized using a threshold of half of the maximum
-    for h in range(0, height):
-        if pthetas[h] > (T / HISTOGRAM_BINARY_RATIO):
-            pthetas[h] = 255
-        else:
-            pthetas[h] = 0
-    # Get staff_lines & staff_line_space info
-    get_staff_info(pthetas)
-    # Estimate the staff line width
-    number_of_rows = 0
-    number_of_lines = 0
-    for h in range(0, height):
-        if pthetas[h] == 255:
-            number_of_rows += 1
-            if h >= 1 and pthetas[h - 1] != 255:
-                # Count this case as a new line
-                number_of_lines += 1
-    W = number_of_rows / number_of_lines
-    staff_line_width = W
-    # Z is the number of times we need to run the staff line removal method
-    Z = math.ceil(W / 2)
+    # Get the staff lines info
+    estimate_staff_info(img_rotated)
+
     img_without_staff_lines = img_rotated_thresh.copy()
     wsl_height, wsl_width = img_without_staff_lines.shape[:2]
     blank_rotated_img = np.zeros((wsl_height, wsl_width), np.uint8)
+
+    # Z is the number of times we need to run the staff line removal method
+    Z = math.ceil(staff_line_width / 2)
     for z in range(0, Z):
         for i in range(0, wsl_height):
             for j in range(0, wsl_width):
@@ -306,11 +326,27 @@ def adaptive_removal():
                     # Yes: copy this pixel to blank_rotated_img
                     blank_rotated_img[i, j] = pixel_gray_scale_value
         img_without_staff_lines = img_without_staff_lines - blank_rotated_img
+
     # Perform dilation to restore the missing details
     dilate_structuring_element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     img_without_staff_lines = cv2.dilate(img_without_staff_lines, dilate_structuring_element)
     _, img_without_staff_lines = cv2.threshold(img_without_staff_lines, 127, 255, cv2.THRESH_BINARY_INV)
-    cv2.imshow(WTITLE_IMG_WITHOUT_STAFFLINES, img_without_staff_lines)
+
+    # Now redraw the removed staff lines
+    img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
+    img_without_staff_lines_overlay = img_without_staff_lines_rgb.copy()
+    for staff_line in staff_lines:
+        rect_x = staff_line[0]
+        rect_width = staff_line[1]
+        p1 = (0, rect_x)
+        p2 = (wsl_width, rect_x + rect_width)
+        # Draw a red rectangle for each staff_line
+        cv2.rectangle(img_without_staff_lines_overlay, p1, p2, (0, 0, 255), cv2.FILLED, 8, 0)
+    # Apply the overlay
+    alpha = 0.3
+    cv2.addWeighted(img_without_staff_lines_overlay, alpha, img_without_staff_lines_rgb,
+                    1 - alpha, 0, img_without_staff_lines_rgb)
+    cv2.imshow(WTITLE_IMG_WITHOUT_STAFFLINES, img_without_staff_lines_rgb)
     cv2.waitKey(0)
     return 0
 

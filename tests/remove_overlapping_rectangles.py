@@ -47,7 +47,6 @@ for i in range(0, num_labels):
     rects_init.append([reversed_p1, reversed_p2])
 
 # Need to remove the biggest rectangle
-# TODO XIN this should be done in the "connectedComponentsWithStats" function above
 rects_init.pop(0)
 rects_result = Utils.remove_overlapping_rectangles(rects_init)
 

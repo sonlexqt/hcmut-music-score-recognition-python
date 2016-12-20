@@ -14,10 +14,10 @@ def noisy(noise_typ, image):
         noisy = image + gauss
         return noisy
     elif noise_typ == "s&p":
+        # salt-and-pepper noise
         row, col, ch = image.shape
         s_vs_p = 0.5
-        amount = 0.004
-        # TODO XIN modify this amount value
+        # This is the amount of noise
         amount = 0.002
         out = np.copy(image)
         # Salt mode
