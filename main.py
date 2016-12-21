@@ -2,14 +2,14 @@
 import cv2
 import numpy as np
 import math
-import copy
+from lxml import etree
+
 # Import modules
 from utils import Utils
 from symbol import Symbol
 from measure import Measure
 from staff import Staff
 from score import Score
-
 
 """""""""""""""""""""""""""""""""""""""
 FOR TESTING
