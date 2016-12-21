@@ -7,73 +7,73 @@ def get_symbol_by_index(idx):
     symbol = None
     if idx is 0:
         # DOT
-        symbol = SymbolsDot()
+        symbol = SymbolDot()
     elif idx is 1:
         # KEY_SIGNATURE_1_#
-        symbol = SymbolsKeySignature('KEY_SIGNATURE_1_#', '1_#')
+        symbol = SymbolKeySignature('KEY_SIGNATURE_1_#', '1_#')
     elif idx is 2:
         # NOTE_QUARTER_UP
-        symbol = SymbolsNote('NOTE_QUARTER_UP', 1, 1/4, 'up', 37, False)
+        symbol = SymbolNote('NOTE_QUARTER_UP', 1, 1 / 4, 'up', 37, False)
     elif idx is 3:
         # NOTE_HALF_UP
-        symbol = SymbolsNote('NOTE_HALF_UP', 1, 1/2, 'up', 37, False)
+        symbol = SymbolNote('NOTE_HALF_UP', 1, 1 / 2, 'up', 37, False)
     elif idx is 4:
         # TIME_SIGNATURE_3_4
-        symbol = SymbolsTimeSignature('TIME_SIGNATURE_3_4', '3_4')
+        symbol = SymbolTimeSignature('TIME_SIGNATURE_3_4', '3_4')
     elif idx is 5:
         # BAR
-        symbol = SymbolsBar('BAR_SINGLE', 'single')
+        symbol = SymbolBar('BAR_SINGLE', 'single')
     elif idx is 6:
         # NOTE_QUARTER_DOWN
-        symbol = SymbolsNote('NOTE_QUARTER_DOWN', 1, 1/4, 'down', 0, False)
+        symbol = SymbolNote('NOTE_QUARTER_DOWN', 1, 1 / 4, 'down', 0, False)
     elif idx is 7:
         # BEAM_2_EIGHTH_NOTES_UP
-        symbol = SymbolsNote('BEAM_2_EIGHTH_NOTES_UP', 2, 1/4, 'up', 36, False)
+        symbol = SymbolNote('BEAM_2_EIGHTH_NOTES_UP', 2, 1 / 4, 'up', 36, False)
     elif idx is 8:
         # BEAM_2_EIGHTH_NOTES_DOWN
-        symbol = SymbolsNote('BEAM_2_EIGHTH_NOTES_DOWN', 2, 1/4, 'down', 0, False)
+        symbol = SymbolNote('BEAM_2_EIGHTH_NOTES_DOWN', 2, 1 / 4, 'down', 0, False)
     elif idx is 9:
         # FINAL_BAR
-        symbol = SymbolsBar('BAR_DOUBLE', 'double')
+        symbol = SymbolBar('BAR_DOUBLE', 'double')
     elif idx is 10:
         # REST_QUARTER
-        symbol = SymbolsRest('REST_QUARTER', 4)
+        symbol = SymbolRest('REST_QUARTER', 4)
     elif idx is 11:
         # NOTE_HALF_DOWN
-        symbol = SymbolsNote('NOTE_HALF_DOWN', 1, 1/2, 'down', 0, False)
+        symbol = SymbolNote('NOTE_HALF_DOWN', 1, 1 / 2, 'down', 0, False)
     elif idx is 12:
         # NOTE_EIGHTH_DOWN
-        symbol = SymbolsNote('NOTE_EIGHTH_DOWN', 1, 1/8, 'down', 0, False)
+        symbol = SymbolNote('NOTE_EIGHTH_DOWN', 1, 1 / 8, 'down', 0, False)
     elif idx is 13:
         # KEY_SIGNATURE_2_#
-        symbol = SymbolsKeySignature('KEY_SIGNATURE_2_#', '2_#')
+        symbol = SymbolKeySignature('KEY_SIGNATURE_2_#', '2_#')
     elif idx is 14:
         # CLEF_TREBLE
-        symbol = SymbolsClef('CLEF_TREBLE', 'treble')
+        symbol = SymbolClef('CLEF_TREBLE', 'treble')
     elif idx is 15:
         # NOTE_EIGHTH_UP
-        symbol = SymbolsNote('NOTE_EIGHTH_UP', 1, 1/8, 'up', 37, False)
+        symbol = SymbolNote('NOTE_EIGHTH_UP', 1, 1 / 8, 'up', 37, False)
     elif idx is 16:
         # NOTE_HALF_UP_WITH_DOT
-        symbol = SymbolsNote('NOTE_HALF_UP_WITH_DOT', 1, 1/2, 'up', 37, True)
+        symbol = SymbolNote('NOTE_HALF_UP_WITH_DOT', 1, 1 / 2, 'up', 37, True)
     elif idx is 17:
         # TIE
-        symbol = SymbolsTie()
+        symbol = SymbolTie()
     elif idx is 18:
         # TIME_SIGNATURE_4_4
-        symbol = SymbolsTimeSignature('TIME_SIGNATURE_4_4', '4_4')
+        symbol = SymbolTimeSignature('TIME_SIGNATURE_4_4', '4_4')
     elif idx is 19:
         # NOTE_QUARTER_UP_WITH_DOT
-        symbol = SymbolsNote('NOTE_QUARTER_UP_WITH_DOT', 1, 1/4, 'up', 37, True)
+        symbol = SymbolNote('NOTE_QUARTER_UP_WITH_DOT', 1, 1 / 4, 'up', 37, True)
     elif idx is 20:
         # NOTE_WHOLE
-        symbol = SymbolsNote('NOTE_WHOLE', 1, 1, 'up', 0, False)
+        symbol = SymbolNote('NOTE_WHOLE', 1, 1, 'up', 0, False)
     else:
         print('!FAIL Symbol recognition - getting index:', idx)
     return symbol
 
 
-class Symbols:
+class Symbol:
     def __init__(self, class_name):
         self.class_name = class_name
         self.name = 'DEFAULT_NAME'
@@ -89,7 +89,7 @@ class Symbols:
         return get_symbol_by_index(index)
 
 
-class SymbolsDot(Symbols):
+class SymbolDot(Symbol):
     def __init__(self):
         super().__init__('dot')
         self.name = 'DOT'
@@ -102,7 +102,7 @@ class SymbolsDot(Symbols):
 #         self.type = s_type  # sharp, flat, double_sharp, double_flat
 
 
-class SymbolsNote(Symbols):
+class SymbolNote(Symbol):
     def __init__(self, name, number_of_notes, duration, direction, offset, with_dot):
         super().__init__('note')
         self.name = name
@@ -167,42 +167,42 @@ class SymbolsNote(Symbols):
         return 0
 
 
-class SymbolsTimeSignature(Symbols):
+class SymbolTimeSignature(Symbol):
     def __init__(self, name, time_signature_type):
         super().__init__('time_signature')
         self.name = name
         self.type = time_signature_type
 
 
-class SymbolsBar(Symbols):
+class SymbolBar(Symbol):
     def __init__(self, name, bar_type):
         super().__init__('bar')
         self.name = name
         self.type = bar_type
 
 
-class SymbolsRest(Symbols):
+class SymbolRest(Symbol):
     def __init__(self, name, duration):
         super().__init__('rest')
         self.name = name
         self.duration = duration
 
 
-class SymbolsKeySignature(Symbols):
+class SymbolKeySignature(Symbol):
     def __init__(self, name, key_signature_type):
         super().__init__('key_signature')
         self.name = name
         self.type = key_signature_type
 
 
-class SymbolsClef(Symbols):
+class SymbolClef(Symbol):
     def __init__(self, name, clef_type):
         super().__init__('clef')
         self.name = name
         self.type = clef_type
 
 
-class SymbolsTie(Symbols):
+class SymbolTie(Symbol):
     def __init__(self):
         super().__init__('tie')
         self.name = 'TIE'

@@ -1,9 +1,15 @@
+# Import libraries
 import cv2
 import numpy as np
 import math
-from utils import Utils
-from symbols import Symbols
 import copy
+# Import modules
+from utils import Utils
+from symbol import Symbol
+from measure import Measure
+from staff import Staff
+from score import Score
+
 
 """""""""""""""""""""""""""""""""""""""
 FOR TESTING
@@ -60,7 +66,7 @@ img_rotated = None
 img_without_staff_lines = None
 # The rectangles containing the symbols
 rects_merged = []
-rects_recognized = []
+score = None
 
 """""""""""""""""""""""""""""""""""""""
 HELPER FUNCTIONS
@@ -392,12 +398,13 @@ def get_connected_components():
 
 
 def recognize_symbols():
-    global rects_merged, rects_recognized, img_without_staff_lines, staff_lines, staff_height, staff_line_space
+    global rects_merged, img_without_staff_lines, staff_lines, staff_height, staff_line_space, score
     img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
     treble_clefs = []
     # Initialize the kNN system
     Utils.init_knn()
 
+    # First: detect the treble clefs in order to group the symbols
     for i, rect in enumerate(rects_merged):
         left, top, right, bottom = Utils.get_rect_coordinates(rect)
         # p1 = (left, top)
@@ -424,17 +431,24 @@ def recognize_symbols():
 
     # Sort the treble clefs by their position
     treble_clefs = Utils.sort_treble_clefts(treble_clefs)
-    print('There are', len(treble_clefs), 'treble_clefs:')
+    print('=== There are', len(treble_clefs), 'treble_clefs:')
     print(treble_clefs)
     # Remove all the other rectangles outside of the treble clefs
     rects_symbols = Utils.remove_other_rectangles(rects_merged, treble_clefs)
-    # Sort the symbols into groups (or staffs)
+    # Sort the symbols into groups
     rects_sorted = Utils.sort_rectangles(rects_symbols, treble_clefs, staff_lines, staff_height)
 
-    rects_recognized = copy.deepcopy(rects_sorted)
-
+    # Start recognizing symbols
+    # Initialize score
+    score = Score()
     for group_index, group in enumerate(rects_sorted):
+        # Initialize staff
+        current_staff = Staff()
+        current_measure = None
         for i, rect in enumerate(group):
+            if i == 0:
+                current_measure = Measure()
+
             left, top, right, bottom = Utils.get_rect_coordinates(rect)
             # Now need to convert the Descartes coordinate system back to the OpenCV coordinate system
             restored_p1 = (left, -top)
@@ -447,40 +461,54 @@ def recognize_symbols():
             # cv2.putText(img_without_staff_lines_rgb, str(i), (int(x + rect_width / 4), y + rect_height + 10),
             #             cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
             estimated_bar_width = staff_line_width * BAR_WIDTH_RATIO
+            this_symbol = None
             if rect_width <= estimated_bar_width:
                 # Check if this is a bar
                 if math.isclose(staff_height, rect_height, rel_tol=BAR_HEIGHT_REL_TOL):
-                    rects_recognized[group_index][i] = Symbols.get(5)
+                    this_symbol = Symbol.get(5)  # 5 is index of 'bar'
                 else:
                     # Check if this is a dot
                     estimated_dot_height = staff_line_width * DOT_HEIGHT_RATIO
                     if rect_height <= estimated_dot_height:
-                        rects_recognized[group_index][i] = Symbols.get(0)
+                        this_symbol = Symbol.get(0)  # 0 is index of 'dot'
                     else:
-                        rects_recognized[group_index][i] = Symbols.get(-1)
+                        this_symbol = Symbol.get(-1)  # -1 means can't recognize this symbol
             else:
                 # Else
                 sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
                 _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
                 sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
                 this_symbol = Utils.recognize_symbol(sub_image_resized)
-                rects_recognized[group_index][i] = this_symbol
+                if this_symbol.get_class_name() == 'key_signature':
+                    # Set this staff's key signature (optional)
+                    current_staff.set_key_signature(this_symbol)
+                if this_symbol.get_class_name() == 'time_signature':
+                    # Set this staff's time signature (required)
+                    current_staff.set_time_signature(this_symbol)
                 if this_symbol.get_class_name() == 'note':
                     # This is a note
                     # Draw a blue rectangle for each note
                     cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 0, 0), 2, 8, 0)
                     this_symbol.calculate_pitch(rect, group_index, i, staff_lines, staff_line_space)
-                    # print('=== symbol', i, 'staff', group_index, ':', this_symbol.get_pitch())
+                    # print('* symbol', i, 'staff', group_index, ':', this_symbol.get_pitch())
 
+            # Add this symbol to current_measure
+            current_measure.add_symbols(this_symbol)
             # Draw a red rectangle for each symbol
             cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
-            sbl = rects_recognized[group_index][i]
-            if sbl:
-                cv2.putText(img_without_staff_lines_rgb, sbl.get_name(),
+            if this_symbol:
+                cv2.putText(img_without_staff_lines_rgb, this_symbol.get_name(),
                             (int(x - rect_width / 2), y + rect_height + 10),
                             cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
+                if this_symbol.get_class_name() is 'bar':
+                    # Add current_measure to current_staff
+                    current_staff.add_measure(current_measure)
+                    # Then, create a new measure
+                    current_measure = Measure()
             else:
                 print('symbol', i, 'at group_index', group_index, 'not found')
+        # Add current_staff to the score
+        score.add_staff(current_staff)
 
     cv2.imshow(WTITLE_RECOGNIZED_SYMBOLS, img_without_staff_lines_rgb)
     cv2.waitKey(0)

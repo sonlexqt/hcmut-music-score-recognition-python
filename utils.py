@@ -1,4 +1,4 @@
-from symbols import Symbols
+from symbol import Symbol
 from random import randint
 import numpy as np
 import cv2
@@ -163,7 +163,7 @@ class Utils:
         new_comer = symbol_np_array.reshape(-1)[:, np.newaxis].astype(np.float32).T
         ret, results, neighbours, dist = knn.findNearest(new_comer, k=5)
         result_int = int(results[0][0])
-        return Symbols.get(result_int)
+        return Symbol.get(result_int)
 
     @staticmethod
     def sort_treble_clefts(treble_clefs):
