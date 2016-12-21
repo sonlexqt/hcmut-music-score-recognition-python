@@ -9,16 +9,14 @@ import copy
 FOR TESTING
 """""""""""""""""""""""""""""""""""""""
 IMG_PATH = 'images/scores/'
-IMG_1 = '1-jingle-bells'
-IMG_2 = '2-silent-night'
-IMG_3 = '3-happy-birthday'
-IMG_4 = '4-we-wish-you-a-merry-christmas'
-IMG_5 = '5-auld-lang-syne'
-IMG_6 = 'new'
-IMG_EXTENSION = '.jpg'
-# IMG_EXTENSION = '.png'
-IMG_TEST = IMG_5
-IMG_FILE = IMG_PATH + IMG_TEST + IMG_EXTENSION
+IMG_1 = '1-jingle-bells.jpg'
+IMG_2 = '2-silent-night.jpg'
+IMG_3 = '3-happy-birthday.jpg'
+IMG_4 = '4-we-wish-you-a-merry-christmas.jpg'
+IMG_5 = '5-auld-lang-syne.jpg'
+IMG_6 = 'new.png'
+IMG_TEST = IMG_1
+IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
 CONSTANTS
@@ -419,11 +417,15 @@ def recognize_symbols():
             # This one has a big chance of being a treble clef
             # Check if it's really a treble clef
             recognized_sbl = Utils.recognize_symbol(sub_image_resized)
-            if recognized_sbl.get_name() == Symbols.get(14).get_name():  # 14 is index of TREBLE_CLEF
-                treble_clefs.append(rect)
+            # This case is for making sure it's a treble clef !
+            # if recognized_sbl.get_name() == Symbols.get(14).get_name():  # 14 is index of TREBLE_CLEF
+            #     treble_clefs.append(rect)
+            treble_clefs.append(rect)
 
     # Sort the treble clefs by their position
     treble_clefs = Utils.sort_treble_clefts(treble_clefs)
+    print('There are', len(treble_clefs), 'treble_clefs:')
+    print(treble_clefs)
     # Remove all the other rectangles outside of the treble clefs
     rects_symbols = Utils.remove_other_rectangles(rects_merged, treble_clefs)
     # Sort the symbols into groups (or staffs)
@@ -472,9 +474,13 @@ def recognize_symbols():
 
             # Draw a red rectangle for each symbol
             cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
-            cv2.putText(img_without_staff_lines_rgb, rects_recognized[group_index][i].get_name(),
-                        (int(x - rect_width / 2), y + rect_height + 10),
-                        cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
+            sbl = rects_recognized[group_index][i]
+            if sbl:
+                cv2.putText(img_without_staff_lines_rgb, sbl.get_name(),
+                            (int(x - rect_width / 2), y + rect_height + 10),
+                            cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
+            else:
+                print('symbol', i, 'at group_index', group_index, 'not found')
 
     cv2.imshow(WTITLE_RECOGNIZED_SYMBOLS, img_without_staff_lines_rgb)
     cv2.waitKey(0)
