@@ -2,7 +2,6 @@
 import cv2
 import numpy as np
 import math
-from lxml import etree
 
 # Import modules
 from utils import Utils
@@ -520,6 +519,7 @@ def save_as_structured_data():
     # http://stackoverflow.com/questions/2833185/write-xml-file-using-lxml-library-in-python
     # http://stackoverflow.com/questions/3844360/best-way-to-generate-xml
     # http://stackoverflow.com/questions/3605680/creating-a-simple-xml-file-using-python
+
     return 0
 
 """""""""""""""""""""""""""""""""""""""
