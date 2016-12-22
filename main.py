@@ -472,14 +472,14 @@ def recognize_symbols():
             if rect_width <= estimated_bar_width:
                 # Check if this is a bar
                 if math.isclose(staff_height, rect_height, rel_tol=BAR_HEIGHT_REL_TOL):
-                    this_symbol = Symbol.get(5)  # 5 is index of 'bar'
+                    this_symbol = Utils.get_symbol_by_index(5)  # 5 is index of 'bar'
                 else:
                     # Check if this is a dot
                     estimated_dot_height = staff_line_width * DOT_HEIGHT_RATIO
                     if rect_height <= estimated_dot_height:
-                        this_symbol = Symbol.get(0)  # 0 is index of 'dot'
+                        this_symbol = Utils.get_symbol_by_index(0)  # 0 is index of 'dot'
                     else:
-                        this_symbol = Symbol.get(-1)  # -1 means can't recognize this symbol
+                        this_symbol = Utils.get_symbol_by_index(-1)  # -1 means can't recognize this symbol
             else:
                 # Else
                 sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
