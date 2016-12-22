@@ -1,3 +1,6 @@
+# Import libraries
+from xml.etree.ElementTree import Element, SubElement, Comment, tostring
+# Import modules
 import utils
 
 SYMBOL_SIZE = 50
@@ -14,6 +17,10 @@ class Symbol:
     def get_class_name(self):
         return self.class_name
 
+    def get_xml_elem(self, divisions):
+        text = 'Default get_xml_elem method with divisions = ' + str(divisions) + ' - name: ' + self.name + ' - class_name: ' + self.class_name
+        return Comment(text)
+
 
 class SymbolDot(Symbol):
     def __init__(self):
@@ -28,25 +35,21 @@ class SymbolDot(Symbol):
 #         self.type = s_type  # sharp, flat, double_sharp, double_flat
 
 
-class SymbolNote(Symbol):
-    def __init__(self, name, number_of_notes, duration, direction, offset, with_dot):
+class SymbolSingleNote(Symbol):
+    def __init__(self, name, duration, direction, offset, has_dot):
         super().__init__('note')
+        self.number_of_notes = 1
         self.name = name
-        self.number_of_notes = number_of_notes
         self.duration = duration
         self.direction = direction
         self.offset = offset
         self.pitch_step = None
-        # TODO XIN default octave = 4. When is octave != 4 ?
+        # TODO XIN default octave = 4. Handle other cases when octave != 4
         self.pitch_octave = 4
-        self.with_dot = with_dot
+        self.has_dot = has_dot
 
-    def set_pitch(self, step, octave):
+    def set_pitch(self, step):
         self.pitch_step = step
-        self.pitch_octave = octave
-
-    def get_pitch(self):
-        return self.pitch_step
 
     def calculate_pitch(self, rect, group_index, symbol_index, staff_lines, staff_line_space):
         rect_converted = utils.Utils.convert_coordinate(rect)
@@ -54,51 +57,126 @@ class SymbolNote(Symbol):
         rect_width = abs(right - left)
         rect_height = abs(top - bottom)
         note_pos = top + rect_height * self.offset / SYMBOL_SIZE
-
         middle_line_index = group_index * 5 + 2
         middle_line = staff_lines[middle_line_index]
         middle_line_pos = middle_line[0]
-
         distance = abs(middle_line_pos - note_pos)
         module = int(distance * 2 / staff_line_space) % 7
+        note_pitch = None
         if self.direction == 'up':
             if module == 0:
-                self.set_pitch('A', None)
+                note_pitch = 'A'
             elif module == 1:
-                self.set_pitch('G', None)
+                note_pitch = 'G'
             elif module == 2:
-                self.set_pitch('F', None)
+                note_pitch = 'F'
             elif module == 3:
-                self.set_pitch('E', None)
+                note_pitch = 'E'
             elif module == 4:
-                self.set_pitch('D', None)
+                note_pitch = 'D'
             elif module == 5:
-                self.set_pitch('C', None)
+                note_pitch = 'C'
             elif module == 6:
-                self.set_pitch('B', None)
+                note_pitch = 'B'
         elif self.direction == 'down':
             if module == 0:
-                self.set_pitch('B', None)
+                note_pitch = 'B'
             elif module == 1:
-                self.set_pitch('C', None)
+                note_pitch = 'C'
             elif module == 2:
-                self.set_pitch('D', None)
+                note_pitch = 'D'
             elif module == 3:
-                self.set_pitch('E', None)
+                note_pitch = 'E'
             elif module == 4:
-                self.set_pitch('F', None)
+                note_pitch = 'F'
             elif module == 5:
-                self.set_pitch('G', None)
+                note_pitch = 'G'
             elif module == 6:
-                self.set_pitch('A', None)
+                note_pitch = 'A'
+        self.set_pitch(note_pitch)
+        return 0
+
+
+class SymbolBeamNote(Symbol):
+    def __init__(self, name, durations, direction, offsets):
+        super().__init__('note')
+        self.number_of_notes = 2
+        self.name = name
+        self.direction = direction
+        self.durations = durations
+        self.offsets = offsets
+        self.pitch_steps = None  # Should has this format: [step_of_note_1, step_of_note_2]
+        # TODO XIN default octave = 4. Handle other cases when octave != 4
+        self.pitch_octaves = [4, 4]
+
+    def set_pitch(self, steps):
+        self.pitch_steps = steps
+
+    def calculate_pitch(self, rect, group_index, symbol_index, staff_lines, staff_line_space):
+        rect_converted = utils.Utils.convert_coordinate(rect)
+        left, top, right, bottom = utils.Utils.get_rect_coordinates(rect_converted)
+        rect_width = abs(right - left)
+        rect_height = abs(top - bottom)
+
+        note_pitches = []
+        for i in range(0, self.number_of_notes):
+            note_pitch = None
+            offset = self.offsets[i]
+            note_pos = top + rect_height * offset / SYMBOL_SIZE
+            middle_line_index = group_index * 5 + 2
+            middle_line = staff_lines[middle_line_index]
+            middle_line_pos = middle_line[0]
+            distance = abs(middle_line_pos - note_pos)
+            module = int(distance * 2 / staff_line_space) % 7
+            if self.direction == 'up':
+                if module == 0:
+                    note_pitch = 'A'
+                elif module == 1:
+                    note_pitch = 'G'
+                elif module == 2:
+                    note_pitch = 'F'
+                elif module == 3:
+                    note_pitch = 'E'
+                elif module == 4:
+                    note_pitch = 'D'
+                elif module == 5:
+                    note_pitch = 'C'
+                elif module == 6:
+                    note_pitch = 'B'
+            elif self.direction == 'down':
+                if module == 0:
+                    note_pitch = 'B'
+                elif module == 1:
+                    note_pitch = 'C'
+                elif module == 2:
+                    note_pitch = 'D'
+                elif module == 3:
+                    note_pitch = 'E'
+                elif module == 4:
+                    note_pitch = 'F'
+                elif module == 5:
+                    note_pitch = 'G'
+                elif module == 6:
+                    note_pitch = 'A'
+            note_pitches.append(note_pitch)
+        self.set_pitch(note_pitches)
         return 0
 
 
 class SymbolTimeSignature(Symbol):
-    def __init__(self, name, time_signature_type):
+    def __init__(self, name, beats, beat_type):
         super().__init__('time_signature')
         self.name = name
-        self.type = time_signature_type
+        self.beats = beats
+        self.beat_type = beat_type
+
+    def get_xml_elem(self, divisions):
+        elem_time = Element('time')
+        elem_beats = SubElement(elem_time, 'beats')
+        elem_beats.text = str(self.beats)
+        elem_beat_type = SubElement(elem_time, 'beat-type')
+        elem_beat_type.text = str(self.beat_type)
+        return elem_time
 
 
 class SymbolBar(Symbol):
@@ -127,6 +205,14 @@ class SymbolClef(Symbol):
         super().__init__('clef')
         self.name = name
         self.type = clef_type
+
+    def get_xml_elem(self, divisions):
+        elem_clef = Element('clef')
+        elem_sign = SubElement(elem_clef, 'sign')
+        elem_sign.text = 'G'
+        elem_line = SubElement(elem_clef, 'line')
+        elem_line.text = '2'
+        return elem_clef
 
 
 class SymbolTie(Symbol):

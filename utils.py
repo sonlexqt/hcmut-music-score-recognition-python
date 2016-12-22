@@ -211,25 +211,25 @@ class Utils:
             sbl = symbol.SymbolKeySignature('KEY_SIGNATURE_1_#', '1_#')
         elif idx is 2:
             # NOTE_QUARTER_UP
-            sbl = symbol.SymbolNote('NOTE_QUARTER_UP', 1, 1 / 4, 'up', 37, False)
+            sbl = symbol.SymbolSingleNote('NOTE_QUARTER_UP', 1/4, 'up', 37, False)
         elif idx is 3:
             # NOTE_HALF_UP
-            sbl = symbol.SymbolNote('NOTE_HALF_UP', 1, 1 / 2, 'up', 37, False)
+            sbl = symbol.SymbolSingleNote('NOTE_HALF_UP', 1/2, 'up', 37, False)
         elif idx is 4:
             # TIME_SIGNATURE_3_4
-            sbl = symbol.SymbolTimeSignature('TIME_SIGNATURE_3_4', '3_4')
+            sbl = symbol.SymbolTimeSignature('TIME_SIGNATURE_3_4', 3, 4)
         elif idx is 5:
             # BAR
             sbl = symbol.SymbolBar('BAR_SINGLE', 'single')
         elif idx is 6:
             # NOTE_QUARTER_DOWN
-            sbl = symbol.SymbolNote('NOTE_QUARTER_DOWN', 1, 1 / 4, 'down', 0, False)
+            sbl = symbol.SymbolSingleNote('NOTE_QUARTER_DOWN', 1/4, 'down', 0, False)
         elif idx is 7:
             # BEAM_2_EIGHTH_NOTES_UP
-            sbl = symbol.SymbolNote('BEAM_2_EIGHTH_NOTES_UP', 2, 1 / 4, 'up', 36, False)
+            sbl = symbol.SymbolBeamNote('BEAM_2_EIGHTH_NOTES_UP', [1/8, 1/8], 'up', [36, 36])
         elif idx is 8:
             # BEAM_2_EIGHTH_NOTES_DOWN
-            sbl = symbol.SymbolNote('BEAM_2_EIGHTH_NOTES_DOWN', 2, 1 / 4, 'down', 0, False)
+            sbl = symbol.SymbolBeamNote('BEAM_2_EIGHTH_NOTES_DOWN', [1/8, 1/8], 'down', [0, 0])
         elif idx is 9:
             # FINAL_BAR
             sbl = symbol.SymbolBar('BAR_DOUBLE', 'double')
@@ -238,10 +238,10 @@ class Utils:
             sbl = symbol.SymbolRest('REST_QUARTER', 4)
         elif idx is 11:
             # NOTE_HALF_DOWN
-            sbl = symbol.SymbolNote('NOTE_HALF_DOWN', 1, 1 / 2, 'down', 0, False)
+            sbl = symbol.SymbolSingleNote('NOTE_HALF_DOWN', 1/2, 'down', 0, False)
         elif idx is 12:
             # NOTE_EIGHTH_DOWN
-            sbl = symbol.SymbolNote('NOTE_EIGHTH_DOWN', 1, 1 / 8, 'down', 0, False)
+            sbl = symbol.SymbolSingleNote('NOTE_EIGHTH_DOWN', 1/8, 'down', 0, False)
         elif idx is 13:
             # KEY_SIGNATURE_2_#
             sbl = symbol.SymbolKeySignature('KEY_SIGNATURE_2_#', '2_#')
@@ -250,22 +250,37 @@ class Utils:
             sbl = symbol.SymbolClef('CLEF_TREBLE', 'treble')
         elif idx is 15:
             # NOTE_EIGHTH_UP
-            sbl = symbol.SymbolNote('NOTE_EIGHTH_UP', 1, 1 / 8, 'up', 37, False)
+            sbl = symbol.SymbolSingleNote('NOTE_EIGHTH_UP', 1/8, 'up', 37, False)
         elif idx is 16:
             # NOTE_HALF_UP_WITH_DOT
-            sbl = symbol.SymbolNote('NOTE_HALF_UP_WITH_DOT', 1, 1 / 2, 'up', 37, True)
+            sbl = symbol.SymbolSingleNote('NOTE_HALF_UP_WITH_DOT', 1/2, 'up', 37, True)
         elif idx is 17:
             # TIE
             sbl = symbol.SymbolTie()
         elif idx is 18:
             # TIME_SIGNATURE_4_4
-            sbl = symbol.SymbolTimeSignature('TIME_SIGNATURE_4_4', '4_4')
+            sbl = symbol.SymbolTimeSignature('TIME_SIGNATURE_4_4', 4, 4)
         elif idx is 19:
             # NOTE_QUARTER_UP_WITH_DOT
-            sbl = symbol.SymbolNote('NOTE_QUARTER_UP_WITH_DOT', 1, 1 / 4, 'up', 37, True)
+            sbl = symbol.SymbolSingleNote('NOTE_QUARTER_UP_WITH_DOT', 1/4, 'up', 37, True)
         elif idx is 20:
             # NOTE_WHOLE
-            sbl = symbol.SymbolNote('NOTE_WHOLE', 1, 1, 'up', 0, False)
+            sbl = symbol.SymbolSingleNote('NOTE_WHOLE', 1, 'up', 0, False)
         else:
             print('!FAIL Symbol recognition - getting index:', idx)
         return sbl
+
+    @staticmethod
+    def get_note_type(duration):
+        if duration is 1:
+            return 'whole'
+        elif duration is 1/2:
+            return 'half'
+        elif duration is 1/4:
+            return 'quarter'
+        elif duration is 1/8:
+            return 'eighth'
+        elif duration is 1/16:
+            return '16th'
+        else:
+            print('! ERROR: No note type matched')

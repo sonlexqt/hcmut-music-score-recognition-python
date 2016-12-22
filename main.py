@@ -549,9 +549,14 @@ def save_as_structured_data():
                 elem_divisions = SubElement(elem_attributes, 'divisions')
                 elem_divisions.text = str(default_divisions)
             symbols = measure.symbols
-            # for symbol_idx, symbol in enumerate(symbols):
-            #     # TODO XIN
-            #     elem_symbol = symbol.get_xml_elem()
+            for symbol_idx, symbol in enumerate(symbols):
+                elem_symbol = symbol.get_xml_elem(default_divisions)
+                if symbol.get_class_name() in ('clef', 'time_signature', 'key_signature') and staff_idx is 0 and measure_idx is 0:
+                    # Only add children to 'attributes' element
+                    # If these children are from the 1st measure in the 1st staff
+                    elem_attributes.append(elem_symbol)
+                else:
+                    pass
 
     print(prettify(elem_score_partwise))
     return 0
