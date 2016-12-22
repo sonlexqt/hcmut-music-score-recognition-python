@@ -1,17 +1,20 @@
-from xml.etree.ElementTree import Element, SubElement
-from xml.etree import ElementTree
+from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
 
 
 def prettify(elem):
-    """Return a pretty-printed XML string for the Element.
-    """
-    rough_string = ElementTree.tostring(elem, 'utf-8')
+    # Return a pretty-printed XML string for the Element.
+    rough_string = tostring(elem, 'utf-8')
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
-root = Element('score-partwise')
-part_list = SubElement(root, "part-list")
-part_list.attrib['my-attr'] = 'my-attr-value'
+score_partwise = Element('score-partwise')
+part_list = SubElement(score_partwise, 'part-list')
+score_part = SubElement(part_list, 'score-part')
+score_part.attrib['id'] = 'P1'
+part_name = SubElement(score_part, 'part-name')
+part_name.text = 'P1'
+part = SubElement(score_partwise, 'part')
+part.attrib['id'] = 'P1'
 
-print(prettify(root))
+print(prettify(score_partwise))

@@ -111,7 +111,8 @@ class SymbolNote(Symbol):
         self.direction = direction
         self.offset = offset
         self.pitch_step = None
-        self.pitch_octave = None
+        # TODO XIN default octave = 4. When is octave != 4 ?
+        self.pitch_octave = 4
         self.with_dot = with_dot
 
     def set_pitch(self, step, octave):

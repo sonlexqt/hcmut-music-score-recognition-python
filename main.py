@@ -2,7 +2,8 @@
 import cv2
 import numpy as np
 import math
-
+from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.dom import minidom
 # Import modules
 from utils import Utils
 from symbol import Symbol
@@ -213,6 +214,13 @@ def estimate_staff_info(img_rotated):
     print('staff_line_space:', staff_line_space)
     print('staff_height:', staff_height)
     return 0
+
+
+def prettify(elem):
+    # Return a pretty-printed XML string for the Element.
+    rough_string = tostring(elem, 'utf-8')
+    reparsed = minidom.parseString(rough_string)
+    return reparsed.toprettyxml(indent="  ")
 
 """""""""""""""""""""""""""""""""""""""
 STEPS
@@ -515,11 +523,37 @@ def recognize_symbols():
 
 
 def save_as_structured_data():
-    # LXML
-    # http://stackoverflow.com/questions/2833185/write-xml-file-using-lxml-library-in-python
-    # http://stackoverflow.com/questions/3844360/best-way-to-generate-xml
-    # http://stackoverflow.com/questions/3605680/creating-a-simple-xml-file-using-python
+    global score
+    elem_score_partwise = Element('score-partwise')
+    elem_part_list = SubElement(elem_score_partwise, 'part-list')
+    elem_score_part = SubElement(elem_part_list, 'score-part')
+    elem_score_part.attrib['id'] = 'P1'
+    elem_part_name = SubElement(elem_score_part, 'part-name')
+    elem_part_name.text = 'P1'
+    elem_part = SubElement(elem_score_partwise, 'part')
+    elem_part.attrib['id'] = 'P1'
+    staffs = score.staffs
 
+    measures_count = 0
+    default_divisions = 2
+    for staff_idx, staff in enumerate(staffs):
+        measures = staff.measures
+        for measure_idx, measure in enumerate(measures):
+            measures_count += 1
+            elem_measure = SubElement(elem_part, 'measure')
+            elem_measure.attrib['number'] = str(measures_count)
+            elem_attributes = None
+            if staff_idx is 0 and measure_idx is 0:
+                # Add 'attributes' element
+                elem_attributes = SubElement(elem_measure, 'attributes')
+                elem_divisions = SubElement(elem_attributes, 'divisions')
+                elem_divisions.text = str(default_divisions)
+            symbols = measure.symbols
+            # for symbol_idx, symbol in enumerate(symbols):
+            #     # TODO XIN
+            #     elem_symbol = symbol.get_xml_elem()
+
+    print(prettify(elem_score_partwise))
     return 0
 
 """""""""""""""""""""""""""""""""""""""
