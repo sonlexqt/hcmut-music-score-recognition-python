@@ -1,4 +1,4 @@
-from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.etree.ElementTree import Element, SubElement, tostring, fromstring
 from xml.dom import minidom
 
 
@@ -17,4 +17,9 @@ part_name.text = 'P1'
 part = SubElement(score_partwise, 'part')
 part.attrib['id'] = 'P1'
 
-print(prettify(score_partwise))
+xin = Element('xin')
+heo = Element('heo')
+score_partwise.extend([xin, heo])
+
+print(tostring(score_partwise))
+
