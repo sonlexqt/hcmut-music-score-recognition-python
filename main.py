@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 import math
-from xml.etree.ElementTree import Element, SubElement, tostring, fromstring
+from xml.etree.ElementTree import Element, SubElement, tostring, ElementTree
 from xml.dom import minidom
 # Import modules
 from utils import Utils
@@ -47,6 +47,7 @@ TREBLE_CLEF_HEIGHT_RATIO = 1.5
 BAR_HEIGHT_REL_TOL = 0.1
 DEFAULT_SYMBOL_SIZE_WIDTH = 50
 DEFAULT_SYMBOL_SIZE_HEIGHT = 50
+XML_OUTPUT_FILENAME = 'output.xml'
 
 """""""""""""""""""""""""""""""""""""""
 GLOBAL VARIABLES
@@ -553,8 +554,8 @@ def save_as_structured_data():
             # Rearrange clef, key, time
             if measures_count == 1:
                 symbols = measure.symbols
-                clef_index = None
-                time_index = None
+                clef_index = 0  # Default value
+                time_index = 0  # Default value
                 for symbol_idx, symbol in enumerate(symbols):
                     if symbol.class_name == 'clef':
                         clef_index = symbol_idx
@@ -592,7 +593,12 @@ def save_as_structured_data():
                         # that elem_symbol contains more than 1 elem
                         elem_measure.extend(elem_symbol)
 
+    print('=== Begin XML output')
     print(prettify(elem_score_partwise))
+    print('=== End XML output')
+    # Write XML output to file
+    tree = ElementTree(elem_score_partwise)
+    tree.write(XML_OUTPUT_FILENAME)
     return 0
 
 """""""""""""""""""""""""""""""""""""""
