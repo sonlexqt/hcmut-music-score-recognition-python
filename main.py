@@ -22,7 +22,7 @@ IMG_4 = '4-we-wish-you-a-merry-christmas.jpg'
 IMG_5 = '5-auld-lang-syne.jpg'
 IMG_6 = 'new.png'
 IMG_7 = 'new.jpg'
-IMG_TEST = IMG_1
+IMG_TEST = IMG_2
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -508,7 +508,7 @@ def recognize_symbols():
                 cv2.putText(img_without_staff_lines_rgb, this_symbol.name,
                             (int(x - rect_width / 2), y + rect_height + 10),
                             cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
-                if this_symbol.class_name is 'bar':
+                if this_symbol.class_name is 'bar' and i > 0:
                     # Add current_measure to current_staff
                     current_staff.add_measure(current_measure)
                     # Then, create a new measure

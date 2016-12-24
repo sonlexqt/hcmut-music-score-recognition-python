@@ -43,12 +43,13 @@ class SymbolSingleNote(Symbol):
         self.direction = direction
         self.offset = offset
         self.pitch_step = None
-        # TODO XIN default octave = 4. Handle other cases when octave != 4
+        # Default octave = 4
         self.pitch_octave = 4
         self.has_dot = has_dot
 
-    def set_pitch(self, step):
+    def set_pitch(self, step, octave):
         self.pitch_step = step
+        self.pitch_octave = octave
 
     def calculate_pitch(self, rect, group_index, symbol_index, staff_lines, staff_line_space, staff_line_width):
         rect_converted = utils.Utils.convert_coordinate(rect)
@@ -62,38 +63,42 @@ class SymbolSingleNote(Symbol):
         distance = abs(middle_line_pos - note_pos)
         staff_line_space_extended = staff_line_space + staff_line_width
         module = int(round(distance * 2 / staff_line_space_extended)) % 7
-        note_pitch = None
+        note_step = self.pitch_step
+        note_octave = self.pitch_octave
         if self.direction == 'up':
             if module == 0:
-                note_pitch = 'A'
+                note_step = 'A'
             elif module == 1:
-                note_pitch = 'G'
+                note_step = 'G'
             elif module == 2:
-                note_pitch = 'F'
+                note_step = 'F'
             elif module == 3:
-                note_pitch = 'E'
+                note_step = 'E'
             elif module == 4:
-                note_pitch = 'D'
+                note_step = 'D'
             elif module == 5:
-                note_pitch = 'C'
+                note_step = 'C'
             elif module == 6:
-                note_pitch = 'B'
+                note_step = 'B'
         elif self.direction == 'down':
             if module == 0:
-                note_pitch = 'B'
+                note_step = 'A'
             elif module == 1:
-                note_pitch = 'C'
+                note_step = 'B'
             elif module == 2:
-                note_pitch = 'D'
+                note_step = 'C'
             elif module == 3:
-                note_pitch = 'E'
+                note_step = 'D'
             elif module == 4:
-                note_pitch = 'F'
+                note_step = 'E'
             elif module == 5:
-                note_pitch = 'G'
+                note_step = 'F'
             elif module == 6:
-                note_pitch = 'A'
-        self.set_pitch(note_pitch)
+                note_step = 'G'
+            # Decide if this note's octave is 4 or 5
+            if distance > staff_line_space / 2:
+                note_octave = 5
+        self.set_pitch(note_step, note_octave)
         return 0
 
     def get_xml_elem(self, divisions):
@@ -132,11 +137,12 @@ class SymbolBeamNote(Symbol):
         self.durations = durations
         self.offsets = offsets
         self.pitch_steps = None  # Should has this format: [step_of_note_1, step_of_note_2]
-        # TODO XIN default octave = 4. Handle other cases when octave != 4
+        # Default octave = 4
         self.pitch_octaves = [4, 4]
 
-    def set_pitch(self, steps):
+    def set_pitch(self, steps, octaves):
         self.pitch_steps = steps
+        self.pitch_octaves = octaves
 
     def calculate_pitch(self, rect, group_index, symbol_index, staff_lines, staff_line_space, staff_line_width):
         rect_converted = utils.Utils.convert_coordinate(rect)
@@ -145,8 +151,8 @@ class SymbolBeamNote(Symbol):
         rect_height = abs(top - bottom)
 
         note_pitches = []
+        note_octaves = []
         for i in range(0, self.number_of_notes):
-            note_pitch = None
             offset = self.offsets[i]
             note_pos = top + rect_height * offset / SYMBOL_SIZE
             middle_line_index = group_index * 5 + 2
@@ -155,38 +161,44 @@ class SymbolBeamNote(Symbol):
             distance = abs(middle_line_pos - note_pos)
             staff_line_space_extended = staff_line_space + staff_line_width
             module = int(round(distance * 2 / staff_line_space_extended)) % 7
+            note_step = self.pitch_steps[i]
+            note_octave = self.pitch_octaves[i]
             if self.direction == 'up':
                 if module == 0:
-                    note_pitch = 'A'
+                    note_step = 'A'
                 elif module == 1:
-                    note_pitch = 'G'
+                    note_step = 'G'
                 elif module == 2:
-                    note_pitch = 'F'
+                    note_step = 'F'
                 elif module == 3:
-                    note_pitch = 'E'
+                    note_step = 'E'
                 elif module == 4:
-                    note_pitch = 'D'
+                    note_step = 'D'
                 elif module == 5:
-                    note_pitch = 'C'
+                    note_step = 'C'
                 elif module == 6:
-                    note_pitch = 'B'
+                    note_step = 'B'
             elif self.direction == 'down':
                 if module == 0:
-                    note_pitch = 'B'
+                    note_step = 'A'
                 elif module == 1:
-                    note_pitch = 'C'
+                    note_step = 'B'
                 elif module == 2:
-                    note_pitch = 'D'
+                    note_step = 'C'
                 elif module == 3:
-                    note_pitch = 'E'
+                    note_step = 'D'
                 elif module == 4:
-                    note_pitch = 'F'
+                    note_step = 'E'
                 elif module == 5:
-                    note_pitch = 'G'
+                    note_step = 'F'
                 elif module == 6:
-                    note_pitch = 'A'
-            note_pitches.append(note_pitch)
-        self.set_pitch(note_pitches)
+                    note_step = 'G'
+                # Decide if this note's octave is 4 or 5
+                if distance > staff_line_space * 2:
+                    note_octave = 5
+            note_pitches.append(note_step)
+            note_octaves.append(note_octave)
+        self.set_pitch(note_pitches, note_octaves)
         return 0
 
     def get_xml_elem(self, divisions):
