@@ -11,12 +11,6 @@ class Symbol:
         self.class_name = class_name
         self.name = 'DEFAULT_NAME'
 
-    def get_name(self):
-        return self.name
-
-    def get_class_name(self):
-        return self.class_name
-
     def get_xml_elem(self, divisions):
         text = 'Default get_xml_elem method with divisions = ' + str(divisions) + ' - name: ' + self.name + ' - class_name: ' + self.class_name
         elem_comment = Comment(text)
@@ -103,7 +97,6 @@ class SymbolSingleNote(Symbol):
         return 0
 
     def get_xml_elem(self, divisions):
-        has_dot = self.has_dot
         elem_note = Element('note')
         # pitch
         elem_pitch = SubElement(elem_note, 'pitch')
@@ -113,14 +106,16 @@ class SymbolSingleNote(Symbol):
         elem_octave.text = str(self.pitch_octave)
         # duration
         duration = int(self.duration / (1 / 4) * divisions)
+        if self.has_dot:
+            duration *= 1.5
         elem_duration = SubElement(elem_note, 'duration')
-        elem_duration.text = str(duration)
+        elem_duration.text = str(int(duration))
         # type
         note_type = utils.Utils.get_note_type(self.duration)
         elem_type = SubElement(elem_note, 'type')
         elem_type.text = str(note_type)
         # dot
-        if has_dot:
+        if self.has_dot:
             elem_dot = SubElement(elem_note, 'dot')
         # stem
         elem_stem = SubElement(elem_note, 'stem')

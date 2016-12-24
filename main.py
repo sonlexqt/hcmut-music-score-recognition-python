@@ -433,7 +433,7 @@ def recognize_symbols():
             # Check if it's really a treble clef
             recognized_sbl = Utils.recognize_symbol(sub_image_resized)
             # This case is for making sure it's a treble clef !
-            # if recognized_sbl.get_name() == Symbols.get(14).get_name():  # 14 is index of TREBLE_CLEF
+            # if recognized_sbl.name == Symbols.get(14).name:  # 14 is index of TREBLE_CLEF
             #     treble_clefs.append(rect)
             treble_clefs.append(rect)
 
@@ -487,13 +487,13 @@ def recognize_symbols():
                 _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
                 sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
                 this_symbol = Utils.recognize_symbol(sub_image_resized)
-                if this_symbol.get_class_name() == 'key_signature':
+                if this_symbol.class_name == 'key_signature':
                     # Set this staff's key signature (optional)
                     current_staff.set_key_signature(this_symbol)
-                if this_symbol.get_class_name() == 'time_signature':
+                if this_symbol.class_name == 'time_signature':
                     # Set this staff's time signature (required)
                     current_staff.set_time_signature(this_symbol)
-                if this_symbol.get_class_name() == 'note':
+                if this_symbol.class_name == 'note':
                     # This is a note
                     # Draw a blue rectangle for each note
                     cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 0, 0), 2, 8, 0)
@@ -505,10 +505,10 @@ def recognize_symbols():
             # Draw a red rectangle for each symbol
             cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
             if this_symbol:
-                cv2.putText(img_without_staff_lines_rgb, this_symbol.get_name(),
+                cv2.putText(img_without_staff_lines_rgb, this_symbol.name,
                             (int(x - rect_width / 2), y + rect_height + 10),
                             cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
-                if this_symbol.get_class_name() is 'bar':
+                if this_symbol.class_name is 'bar':
                     # Add current_measure to current_staff
                     current_staff.add_measure(current_measure)
                     # Then, create a new measure
@@ -544,21 +544,46 @@ def save_as_structured_data():
             elem_measure = SubElement(elem_part, 'measure')
             elem_measure.attrib['number'] = str(measures_count)
             elem_attributes = None
-            if staff_idx == 0 and measures_count == 1:
+            if measures_count == 1:
                 # Add 'attributes' element
                 elem_attributes = SubElement(elem_measure, 'attributes')
                 elem_divisions = SubElement(elem_attributes, 'divisions')
                 elem_divisions.text = str(default_divisions)
+
+            # Rearrange clef, key, time
+            if measures_count == 1:
+                symbols = measure.symbols
+                clef_index = None
+                time_index = None
+                for symbol_idx, symbol in enumerate(symbols):
+                    if symbol.class_name == 'clef':
+                        clef_index = symbol_idx
+                    if symbol.class_name == 'time_signature':
+                        time_index = symbol_idx
+                # Rearrange the elements
+                if clef_index < time_index:
+                    symbols[clef_index], symbols[time_index] = symbols[time_index], symbols[clef_index]
+                    pass
+
+            # Measure 1st loop: Re-arrange stuffs
+            symbols = measure.symbols
+            for symbol_idx, symbol in enumerate(symbols):
+                # Check for the dots
+                if symbol.class_name == 'dot' and symbol_idx > 0:
+                    previous_sbl = symbols[symbol_idx - 1]
+                    if previous_sbl.class_name == 'note' and previous_sbl.number_of_notes == 1:
+                        previous_sbl.has_dot = True
+
+            # Measure 2nd loop: Get the xml elements
             symbols = measure.symbols
             for symbol_idx, symbol in enumerate(symbols):
                 elem_symbol = symbol.get_xml_elem(default_divisions)
-                if symbol.get_class_name() in ('clef', 'time_signature', 'key_signature') \
-                        and staff_idx == 0 and measures_count == 1:
+                if symbol.class_name in ('clef', 'time_signature', 'key_signature') and measures_count == 1:
                     # Only add children to 'attributes' element
                     # If these children are from the 1st measure in the 1st staff
                     elem_attributes.extend(elem_symbol)
                 else:
-                    if symbol.get_class_name() in ('clef', 'bar', 'dot'):
+                    if symbol.class_name in ('clef', 'bar', 'dot'):
                         # Don't append these to elem_measure
                         pass
                     else:
