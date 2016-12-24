@@ -19,13 +19,18 @@ class Symbol:
 
     def get_xml_elem(self, divisions):
         text = 'Default get_xml_elem method with divisions = ' + str(divisions) + ' - name: ' + self.name + ' - class_name: ' + self.class_name
-        return Comment(text)
+        elem_comment = Comment(text)
+        return [elem_comment]
 
 
 class SymbolDot(Symbol):
     def __init__(self):
         super().__init__('dot')
         self.name = 'DOT'
+
+    def get_xml_elem(self, divisions):
+        elem_bar = Element('dot')
+        return [elem_bar]
 
 
 # class SymbolsAccidental(Symbols):
@@ -51,7 +56,7 @@ class SymbolSingleNote(Symbol):
     def set_pitch(self, step):
         self.pitch_step = step
 
-    def calculate_pitch(self, rect, group_index, symbol_index, staff_lines, staff_line_space):
+    def calculate_pitch(self, rect, group_index, symbol_index, staff_lines, staff_line_space, staff_line_width):
         rect_converted = utils.Utils.convert_coordinate(rect)
         left, top, right, bottom = utils.Utils.get_rect_coordinates(rect_converted)
         rect_width = abs(right - left)
@@ -61,7 +66,8 @@ class SymbolSingleNote(Symbol):
         middle_line = staff_lines[middle_line_index]
         middle_line_pos = middle_line[0]
         distance = abs(middle_line_pos - note_pos)
-        module = int(distance * 2 / staff_line_space) % 7
+        staff_line_space_extended = staff_line_space + staff_line_width
+        module = int(round(distance * 2 / staff_line_space_extended)) % 7
         note_pitch = None
         if self.direction == 'up':
             if module == 0:
@@ -96,6 +102,31 @@ class SymbolSingleNote(Symbol):
         self.set_pitch(note_pitch)
         return 0
 
+    def get_xml_elem(self, divisions):
+        has_dot = self.has_dot
+        elem_note = Element('note')
+        # pitch
+        elem_pitch = SubElement(elem_note, 'pitch')
+        elem_step = SubElement(elem_pitch, 'step')
+        elem_step.text = self.pitch_step
+        elem_octave = SubElement(elem_pitch, 'octave')
+        elem_octave.text = str(self.pitch_octave)
+        # duration
+        duration = int(self.duration / (1 / 4) * divisions)
+        elem_duration = SubElement(elem_note, 'duration')
+        elem_duration.text = str(duration)
+        # type
+        note_type = utils.Utils.get_note_type(self.duration)
+        elem_type = SubElement(elem_note, 'type')
+        elem_type.text = str(note_type)
+        # dot
+        if has_dot:
+            elem_dot = SubElement(elem_note, 'dot')
+        # stem
+        elem_stem = SubElement(elem_note, 'stem')
+        elem_stem.text = str(self.direction)
+        return [elem_note]
+
 
 class SymbolBeamNote(Symbol):
     def __init__(self, name, durations, direction, offsets):
@@ -112,7 +143,7 @@ class SymbolBeamNote(Symbol):
     def set_pitch(self, steps):
         self.pitch_steps = steps
 
-    def calculate_pitch(self, rect, group_index, symbol_index, staff_lines, staff_line_space):
+    def calculate_pitch(self, rect, group_index, symbol_index, staff_lines, staff_line_space, staff_line_width):
         rect_converted = utils.Utils.convert_coordinate(rect)
         left, top, right, bottom = utils.Utils.get_rect_coordinates(rect_converted)
         rect_width = abs(right - left)
@@ -127,7 +158,8 @@ class SymbolBeamNote(Symbol):
             middle_line = staff_lines[middle_line_index]
             middle_line_pos = middle_line[0]
             distance = abs(middle_line_pos - note_pos)
-            module = int(distance * 2 / staff_line_space) % 7
+            staff_line_space_extended = staff_line_space + staff_line_width
+            module = int(round(distance * 2 / staff_line_space_extended)) % 7
             if self.direction == 'up':
                 if module == 0:
                     note_pitch = 'A'
@@ -162,6 +194,37 @@ class SymbolBeamNote(Symbol):
         self.set_pitch(note_pitches)
         return 0
 
+    def get_xml_elem(self, divisions):
+        elems_notes = []
+        for i in range(0, self.number_of_notes):
+            elem_note = Element('note')
+            # pitch
+            elem_pitch = SubElement(elem_note, 'pitch')
+            elem_step = SubElement(elem_pitch, 'step')
+            elem_step.text = self.pitch_steps[i]
+            elem_octave = SubElement(elem_pitch, 'octave')
+            elem_octave.text = str(self.pitch_octaves[i])
+            # duration
+            duration = int(self.durations[i] / (1/4) * divisions)
+            elem_duration = SubElement(elem_note, 'duration')
+            elem_duration.text = str(duration)
+            # type
+            note_type = utils.Utils.get_note_type(self.durations[i])
+            elem_type = SubElement(elem_note, 'type')
+            elem_type.text = str(note_type)
+            # stem
+            elem_stem = SubElement(elem_note, 'stem')
+            elem_stem.text = str(self.direction)
+            # beam
+            elem_beam = SubElement(elem_note, 'beam')
+            elem_beam.attrib['number'] = str(1)
+            if i is 0:
+                elem_beam.text = 'begin'
+            else:
+                elem_beam.text = 'end'
+            elems_notes.append(elem_note)
+        return elems_notes
+
 
 class SymbolTimeSignature(Symbol):
     def __init__(self, name, beats, beat_type):
@@ -176,7 +239,7 @@ class SymbolTimeSignature(Symbol):
         elem_beats.text = str(self.beats)
         elem_beat_type = SubElement(elem_time, 'beat-type')
         elem_beat_type.text = str(self.beat_type)
-        return elem_time
+        return [elem_time]
 
 
 class SymbolBar(Symbol):
@@ -184,6 +247,10 @@ class SymbolBar(Symbol):
         super().__init__('bar')
         self.name = name
         self.type = bar_type
+
+    def get_xml_elem(self, divisions):
+        elem_bar = Element('bar')
+        return [elem_bar]
 
 
 class SymbolRest(Symbol):
@@ -212,7 +279,7 @@ class SymbolClef(Symbol):
         elem_sign.text = 'G'
         elem_line = SubElement(elem_clef, 'line')
         elem_line.text = '2'
-        return elem_clef
+        return [elem_clef]
 
 
 class SymbolTie(Symbol):

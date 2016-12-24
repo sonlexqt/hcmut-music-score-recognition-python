@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 import math
-from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.etree.ElementTree import Element, SubElement, tostring, fromstring
 from xml.dom import minidom
 # Import modules
 from utils import Utils
@@ -21,6 +21,7 @@ IMG_3 = '3-happy-birthday.jpg'
 IMG_4 = '4-we-wish-you-a-merry-christmas.jpg'
 IMG_5 = '5-auld-lang-syne.jpg'
 IMG_6 = 'new.png'
+IMG_7 = 'new.jpg'
 IMG_TEST = IMG_1
 IMG_FILE = IMG_PATH + IMG_TEST
 
@@ -405,7 +406,7 @@ def get_connected_components():
 
 
 def recognize_symbols():
-    global rects_merged, img_without_staff_lines, staff_lines, staff_height, staff_line_space, score
+    global rects_merged, img_without_staff_lines, staff_lines, staff_height, staff_line_space, staff_line_width, score
     img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
     treble_clefs = []
     # Initialize the kNN system
@@ -496,7 +497,7 @@ def recognize_symbols():
                     # This is a note
                     # Draw a blue rectangle for each note
                     cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 0, 0), 2, 8, 0)
-                    this_symbol.calculate_pitch(rect, group_index, i, staff_lines, staff_line_space)
+                    this_symbol.calculate_pitch(rect, group_index, i, staff_lines, staff_line_space, staff_line_width)
                     # print('* symbol', i, 'staff', group_index, ':', this_symbol.get_pitch())
 
             # Add this symbol to current_measure
@@ -543,7 +544,7 @@ def save_as_structured_data():
             elem_measure = SubElement(elem_part, 'measure')
             elem_measure.attrib['number'] = str(measures_count)
             elem_attributes = None
-            if staff_idx is 0 and measure_idx is 0:
+            if staff_idx == 0 and measures_count == 1:
                 # Add 'attributes' element
                 elem_attributes = SubElement(elem_measure, 'attributes')
                 elem_divisions = SubElement(elem_attributes, 'divisions')
@@ -551,12 +552,20 @@ def save_as_structured_data():
             symbols = measure.symbols
             for symbol_idx, symbol in enumerate(symbols):
                 elem_symbol = symbol.get_xml_elem(default_divisions)
-                if symbol.get_class_name() in ('clef', 'time_signature', 'key_signature') and staff_idx is 0 and measure_idx is 0:
+                if symbol.get_class_name() in ('clef', 'time_signature', 'key_signature') \
+                        and staff_idx == 0 and measures_count == 1:
                     # Only add children to 'attributes' element
                     # If these children are from the 1st measure in the 1st staff
-                    elem_attributes.append(elem_symbol)
+                    elem_attributes.extend(elem_symbol)
                 else:
-                    pass
+                    if symbol.get_class_name() in ('clef', 'bar', 'dot'):
+                        # Don't append these to elem_measure
+                        pass
+                    else:
+                        # Append this symbol to elem_measure
+                        # Use extend here instead of append because there are cases
+                        # that elem_symbol contains more than 1 elem
+                        elem_measure.extend(elem_symbol)
 
     print(prettify(elem_score_partwise))
     return 0
