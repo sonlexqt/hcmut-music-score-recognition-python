@@ -60,7 +60,7 @@ class SymbolSingleNote(Symbol):
         note_pos = top + rect_height * self.offset / SYMBOL_SIZE
         middle_line_index = group_index * 5 + 2
         middle_line = staff_lines[middle_line_index]
-        middle_line_pos = middle_line[0]
+        middle_line_pos = middle_line[0] + middle_line[1] / 2
         distance = abs(middle_line_pos - note_pos)
         staff_line_space_extended = staff_line_space + staff_line_width
         module = int(round(distance * 2 / staff_line_space_extended)) % 7
@@ -97,7 +97,7 @@ class SymbolSingleNote(Symbol):
             elif module == 6:
                 note_step = 'G'
             # Decide if this note's octave is 4 or 5
-            if distance > staff_line_space / 2:
+            if distance > staff_line_space * 0.75:
                 note_octave = 5
         self.set_pitch(note_step, note_octave)
         return 0
@@ -196,7 +196,7 @@ class SymbolBeamNote(Symbol):
                 elif module == 6:
                     note_step = 'G'
                 # Decide if this note's octave is 4 or 5
-                if distance > staff_line_space * 2:
+                if distance > staff_line_space * 0.75:
                     note_octave = 5
             note_pitches.append(note_step)
             note_octaves.append(note_octave)
