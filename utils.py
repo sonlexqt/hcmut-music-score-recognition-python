@@ -208,7 +208,7 @@ class Utils:
             sbl = symbol.SymbolDot()
         elif idx == 1:
             # KEY_SIGNATURE_1_#
-            sbl = symbol.SymbolKeySignature('KEY_SIGNATURE_1_#', '1_#')
+            sbl = symbol.SymbolKeySignature('KEY_SIGNATURE_1_#', 1)
         elif idx == 2:
             # NOTE_QUARTER_UP
             sbl = symbol.SymbolSingleNote('NOTE_QUARTER_UP', 1/4, 'up', 37, False)
@@ -244,7 +244,7 @@ class Utils:
             sbl = symbol.SymbolSingleNote('NOTE_EIGHTH_DOWN', 1/8, 'down', 0, False)
         elif idx == 13:
             # KEY_SIGNATURE_2_#
-            sbl = symbol.SymbolKeySignature('KEY_SIGNATURE_2_#', '2_#')
+            sbl = symbol.SymbolKeySignature('KEY_SIGNATURE_2_#', 2)
         elif idx == 14:
             # CLEF_TREBLE
             sbl = symbol.SymbolClef('CLEF_TREBLE', 'treble')

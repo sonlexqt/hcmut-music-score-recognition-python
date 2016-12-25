@@ -12,7 +12,8 @@ class Symbol:
         self.name = 'DEFAULT_NAME'
 
     def get_xml_elem(self, divisions):
-        text = 'Default get_xml_elem method with divisions = ' + str(divisions) + ' - name: ' + self.name + ' - class_name: ' + self.class_name
+        text = 'Default get_xml_elem method with divisions = ' + str(divisions) + ' - name: ' \
+               + self.name + ' - class_name: ' + self.class_name
         elem_comment = Comment(text)
         return [elem_comment]
 
@@ -270,10 +271,16 @@ class SymbolRest(Symbol):
 
 
 class SymbolKeySignature(Symbol):
-    def __init__(self, name, key_signature_type):
+    def __init__(self, name, key_signature_number):
         super().__init__('key_signature')
         self.name = name
-        self.type = key_signature_type
+        self.number = key_signature_number
+
+    def get_xml_elem(self, divisions):
+        elem_key = Element('key')
+        elem_fifths = SubElement(elem_key, 'fifths')
+        elem_fifths.text = str(self.number)
+        return [elem_key]
 
 
 class SymbolClef(Symbol):

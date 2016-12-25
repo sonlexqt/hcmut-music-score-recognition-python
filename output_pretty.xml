@@ -9,11 +9,13 @@
     <measure number="1">
       <attributes>
         <divisions>2</divisions>
+        <key>
+          <fifths>1</fifths>
+        </key>
         <time>
           <beats>3</beats>
           <beat-type>4</beat-type>
         </time>
-        <!--Default get_xml_elem method with divisions = 2 - name: KEY_SIGNATURE_1_# - class_name: key_signature-->
         <clef>
           <sign>G</sign>
           <line>2</line>
@@ -190,7 +192,6 @@
       </note>
     </measure>
     <measure number="7">
-      <!--Default get_xml_elem method with divisions = 2 - name: KEY_SIGNATURE_1_# - class_name: key_signature-->
       <note>
         <pitch>
           <step>F</step>

@@ -556,14 +556,23 @@ def save_as_structured_data():
                 symbols = measure.symbols
                 clef_index = 0  # Default value
                 time_index = 0  # Default value
+                key_index = 0  # Default value
+                # Rearrange clef and time_signature
                 for symbol_idx, symbol in enumerate(symbols):
                     if symbol.class_name == 'clef':
                         clef_index = symbol_idx
                     if symbol.class_name == 'time_signature':
                         time_index = symbol_idx
-                # Rearrange the elements
                 if clef_index < time_index:
                     symbols[clef_index], symbols[time_index] = symbols[time_index], symbols[clef_index]
+                # Rearrange key_signature and time_signature
+                for symbol_idx, symbol in enumerate(symbols):
+                    if symbol.class_name == 'key_signature':
+                        key_index = symbol_idx
+                    if symbol.class_name == 'time_signature':
+                        time_index = symbol_idx
+                if time_index < key_index:
+                    symbols[key_index], symbols[time_index] = symbols[time_index], symbols[key_index]
                     pass
 
             # Measure 1st loop: Re-arrange stuffs
@@ -584,7 +593,7 @@ def save_as_structured_data():
                     # If these children are from the 1st measure in the 1st staff
                     elem_attributes.extend(elem_symbol)
                 else:
-                    if symbol.class_name in ('clef', 'bar', 'dot'):
+                    if symbol.class_name in ('clef', 'bar', 'dot', 'key_signature'):
                         # Don't append these to elem_measure
                         pass
                     else:
