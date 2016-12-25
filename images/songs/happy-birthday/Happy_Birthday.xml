@@ -15,6 +15,7 @@
         </midi-instrument>
       </score-part>
     </part-list>
+    
   <part id="P1">
     <measure number="1" width="178.28">
       <attributes>
@@ -31,6 +32,7 @@
           <line>2</line>
           </clef>
         </attributes>
+
       <note default-x="97.73" default-y="-45.00">
         <pitch>
           <step>D</step>

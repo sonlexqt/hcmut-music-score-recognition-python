@@ -22,7 +22,7 @@ IMG_4 = '4-we-wish-you-a-merry-christmas.jpg'
 IMG_5 = '5-auld-lang-syne.jpg'
 IMG_6 = 'new.png'
 IMG_7 = 'new.jpg'
-IMG_TEST = IMG_1
+IMG_TEST = IMG_3
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -596,6 +596,10 @@ def save_as_structured_data():
     print('=== Begin XML output')
     print(prettify(elem_score_partwise))
     print('=== End XML output')
+    # Write pretty output to file
+    file = open('output_pretty.xml', mode='w')
+    file.write(prettify(elem_score_partwise))
+    file.close()
     # Write XML output to file
     tree = ElementTree(elem_score_partwise)
     tree.write(XML_OUTPUT_FILENAME)
