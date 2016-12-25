@@ -43,10 +43,9 @@ class SymbolSingleNote(Symbol):
         self.duration = duration
         self.direction = direction
         self.offset = offset
-        # Default pitch step = 'G'
-        self.pitch_step = 'G'
-        # Default pitch octave = 4
-        self.pitch_octave = 4
+        self.pitch_step = 'G'  # Default pitch step = 'G'
+        self.pitch_alter = 0  # Default alter value = 0
+        self.pitch_octave = 4  # Default pitch octave = 4
         self.has_dot = has_dot
 
     def set_pitch(self, step, octave):
@@ -109,6 +108,8 @@ class SymbolSingleNote(Symbol):
         elem_pitch = SubElement(elem_note, 'pitch')
         elem_step = SubElement(elem_pitch, 'step')
         elem_step.text = self.pitch_step
+        elem_alter = SubElement(elem_pitch, 'alter')
+        elem_alter.text = str(self.pitch_alter)
         elem_octave = SubElement(elem_pitch, 'octave')
         elem_octave.text = str(self.pitch_octave)
         # duration
@@ -138,10 +139,9 @@ class SymbolBeamNote(Symbol):
         self.direction = direction
         self.durations = durations
         self.offsets = offsets
-        # Default pitch step = 'G'
-        self.pitch_steps = ['G', 'G']  # Should has this format: [step_of_note_1, step_of_note_2]
-        # Default pitch octave = 4
-        self.pitch_octaves = [4, 4]
+        self.pitch_steps = ['G', 'G']  # # Default pitch step = 'G'
+        self.pitch_alters = [0, 0]  # Default alter = 0
+        self.pitch_octaves = [4, 4]  # Default pitch octave = 4
 
     def set_pitch(self, steps, octaves):
         self.pitch_steps = steps
@@ -212,6 +212,8 @@ class SymbolBeamNote(Symbol):
             elem_pitch = SubElement(elem_note, 'pitch')
             elem_step = SubElement(elem_pitch, 'step')
             elem_step.text = self.pitch_steps[i]
+            elem_alter = SubElement(elem_pitch, 'alter')
+            elem_alter.text = str(self.pitch_alters[i])
             elem_octave = SubElement(elem_pitch, 'octave')
             elem_octave.text = str(self.pitch_octaves[i])
             # duration
@@ -275,6 +277,7 @@ class SymbolKeySignature(Symbol):
         super().__init__('key_signature')
         self.name = name
         self.number = key_signature_number
+        self.affected_notes = utils.Utils.get_key_signature_affected_notes(self.number)
 
     def get_xml_elem(self, divisions):
         elem_key = Element('key')

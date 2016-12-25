@@ -284,3 +284,40 @@ class Utils:
             return '16th'
         else:
             print('! ERROR: No note type matched for duration:', duration)
+
+    @staticmethod
+    def get_key_signature_affected_notes(number):
+        res = None
+        if number == 0:
+            res = []
+        elif number == 1:
+            res = ['F']
+        elif number == 2:
+            res = ['F', 'C']
+        elif number == 3:
+            res = ['F', 'C', 'G']
+        elif number == 4:
+            res = ['F', 'C', 'G', 'D']
+        elif number == 5:
+            res = ['F', 'C', 'G', 'D', 'A']
+        elif number == 6:
+            res = ['F', 'C', 'G', 'D', 'A', 'E']
+        elif number == 7:
+            res = ['F', 'C', 'G', 'D', 'A', 'E', 'B']
+        elif number == -1:
+            res = ['B']
+        elif number == -2:
+            res = ['B', 'E']
+        elif number == -3:
+            res = ['B', 'E', 'A']
+        elif number == -4:
+            res = ['B', 'E', 'A', 'D']
+        elif number == -5:
+            res = ['B', 'E', 'A', 'D', 'G']
+        elif number == -6:
+            res = ['B', 'E', 'A', 'D', 'G', 'C']
+        elif number == -7:
+            res = ['B', 'E', 'A', 'D', 'G', 'C', 'F']
+        else:
+            print('! ERROR: No affected notes for key signature number:', number)
+        return res
