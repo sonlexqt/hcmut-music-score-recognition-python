@@ -6,7 +6,7 @@ from xml.etree.ElementTree import Element, SubElement, tostring, ElementTree
 from xml.dom import minidom
 # Import modules
 from utils import Utils
-from symbol import Symbol
+from symbol import SymbolKeySignature
 from measure import Measure
 from staff import Staff
 from score import Score
@@ -22,7 +22,7 @@ IMG_4 = '4-we-wish-you-a-merry-christmas.jpg'
 IMG_5 = '5-auld-lang-syne.jpg'
 IMG_6 = 'new.png'
 IMG_7 = 'new.jpg'
-IMG_TEST = IMG_3
+IMG_TEST = IMG_5
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -453,6 +453,8 @@ def recognize_symbols():
     for group_index, group in enumerate(rects_sorted):
         # Initialize staff
         current_staff = Staff()
+        default_key_signature = SymbolKeySignature('KEY_SIGNATURE_DEFAULT', 0)
+        current_staff.set_key_signature(default_key_signature)
         current_measure = None
         for i, rect in enumerate(group):
             if i == 0:
@@ -540,6 +542,8 @@ def save_as_structured_data():
     default_divisions = 2
     for staff_idx, staff in enumerate(staffs):
         measures = staff.measures
+        key_signature = staff.key_signature
+        key_signature_affected_notes = key_signature.affected_notes
         for measure_idx, measure in enumerate(measures):
             measures_count += 1
             elem_measure = SubElement(elem_part, 'measure')
@@ -583,6 +587,20 @@ def save_as_structured_data():
                     previous_sbl = symbols[symbol_idx - 1]
                     if previous_sbl.class_name == 'note' and previous_sbl.number_of_notes == 1:
                         previous_sbl.has_dot = True
+                # Check for key signature affected notes
+                if symbol.class_name == 'note' and symbol.number_of_notes == 1:
+                    if symbol.pitch_step in key_signature_affected_notes:
+                        if key_signature.number > 0:
+                            symbol.pitch_alter = 1
+                        else:
+                            symbol.pitch_alter = -1
+                if symbol.class_name == 'note' and symbol.number_of_notes == 2:
+                    for note_idx in range(0, 2):
+                        if symbol.pitch_steps[note_idx] in key_signature_affected_notes:
+                            if key_signature.number > 0:
+                                symbol.pitch_alters[note_idx] = 1
+                            else:
+                                symbol.pitch_alters[note_idx] = -1
 
             # Measure 2nd loop: Get the xml elements
             symbols = measure.symbols
