@@ -22,7 +22,7 @@ IMG_4 = '4-we-wish-you-a-merry-christmas.jpg'
 IMG_5 = '5-auld-lang-syne.jpg'
 IMG_6 = 'new.png'
 IMG_7 = 'new.jpg'
-IMG_TEST = IMG_2
+IMG_TEST = IMG_1
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""

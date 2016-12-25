@@ -42,8 +42,9 @@ class SymbolSingleNote(Symbol):
         self.duration = duration
         self.direction = direction
         self.offset = offset
-        self.pitch_step = None
-        # Default octave = 4
+        # Default pitch step = 'G'
+        self.pitch_step = 'G'
+        # Default pitch octave = 4
         self.pitch_octave = 4
         self.has_dot = has_dot
 
@@ -136,8 +137,9 @@ class SymbolBeamNote(Symbol):
         self.direction = direction
         self.durations = durations
         self.offsets = offsets
-        self.pitch_steps = None  # Should has this format: [step_of_note_1, step_of_note_2]
-        # Default octave = 4
+        # Default pitch step = 'G'
+        self.pitch_steps = ['G', 'G']  # Should has this format: [step_of_note_1, step_of_note_2]
+        # Default pitch octave = 4
         self.pitch_octaves = [4, 4]
 
     def set_pitch(self, steps, octaves):
