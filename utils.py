@@ -235,7 +235,7 @@ class Utils:
             sbl = symbol.SymbolBar('BAR_DOUBLE', 'double')
         elif idx == 10:
             # REST_QUARTER
-            sbl = symbol.SymbolRest('REST_QUARTER', 4)
+            sbl = symbol.SymbolRest('REST_QUARTER', 1/4)
         elif idx == 11:
             # NOTE_HALF_DOWN
             sbl = symbol.SymbolSingleNote('NOTE_HALF_DOWN', 1/2, 'down', 0, False)

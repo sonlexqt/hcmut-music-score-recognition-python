@@ -271,6 +271,20 @@ class SymbolRest(Symbol):
         self.name = name
         self.duration = duration
 
+    def get_xml_elem(self, divisions):
+        elem_note = Element('note')
+        # rest
+        elem_rest = SubElement(elem_note, 'rest')
+        # duration
+        duration = int(self.duration / (1 / 4) * divisions)
+        elem_duration = SubElement(elem_note, 'duration')
+        elem_duration.text = str(int(duration))
+        # type
+        note_type = utils.Utils.get_note_type(self.duration)
+        elem_type = SubElement(elem_note, 'type')
+        elem_type.text = str(note_type)
+        return [elem_note]
+
 
 class SymbolKeySignature(Symbol):
     def __init__(self, name, key_signature_number):

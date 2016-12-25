@@ -21,9 +21,21 @@
           <line>2</line>
         </clef>
       </attributes>
-      <!--Default get_xml_elem method with divisions = 2 - name: REST_QUARTER - class_name: rest-->
-      <!--Default get_xml_elem method with divisions = 2 - name: REST_QUARTER - class_name: rest-->
-      <!--Default get_xml_elem method with divisions = 2 - name: REST_QUARTER - class_name: rest-->
+      <note>
+        <rest/>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <rest/>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <rest/>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
       <note>
         <pitch>
           <step>A</step>
@@ -165,7 +177,11 @@
         <type>half</type>
         <stem>down</stem>
       </note>
-      <!--Default get_xml_elem method with divisions = 2 - name: REST_QUARTER - class_name: rest-->
+      <note>
+        <rest/>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
       <note>
         <pitch>
           <step>B</step>
@@ -611,7 +627,11 @@
         <dot/>
         <stem>down</stem>
       </note>
-      <!--Default get_xml_elem method with divisions = 2 - name: REST_QUARTER - class_name: rest-->
+      <note>
+        <rest/>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
     </measure>
   </part>
 </score-partwise>
