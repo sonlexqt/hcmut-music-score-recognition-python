@@ -448,6 +448,7 @@ def recognize_symbols():
     rects_sorted = Utils.sort_rectangles(rects_symbols, treble_clefs, staff_lines, staff_height)
 
     # Start recognizing symbols
+    print('=== Start recognizing symbols')
     # Initialize score
     score = Score()
     for group_index, group in enumerate(rects_sorted):
@@ -490,6 +491,8 @@ def recognize_symbols():
                 _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
                 sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
                 this_symbol = Utils.recognize_symbol(sub_image_resized)
+                # Print each symbol and its recognized result (for debugging)
+                print('symbol', str(i), 'in group', group_index, this_symbol.name)
                 if this_symbol.class_name == 'key_signature':
                     # Set this staff's key signature (optional)
                     current_staff.set_key_signature(this_symbol)
@@ -508,8 +511,8 @@ def recognize_symbols():
             # Draw a red rectangle for each symbol
             cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (0, 0, 255), 1, 8, 0)
             if this_symbol:
-                cv2.putText(img_without_staff_lines_rgb, this_symbol.name,
-                            (int(x - rect_width / 2), y + rect_height + 10),
+                cv2.putText(img_without_staff_lines_rgb, str(i),
+                            (int(x + rect_width / 4), y + rect_height + 10),
                             cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
                 if this_symbol.class_name is 'bar' and i > 0:
                     # Add current_measure to current_staff

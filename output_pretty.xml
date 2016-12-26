@@ -319,8 +319,8 @@
           <alter>0</alter>
           <octave>5</octave>
         </pitch>
-        <duration>3</duration>
-        <type>quarter</type>
+        <duration>6</duration>
+        <type>half</type>
         <dot/>
         <stem>down</stem>
       </note>
@@ -622,8 +622,8 @@
           <alter>0</alter>
           <octave>5</octave>
         </pitch>
-        <duration>3</duration>
-        <type>quarter</type>
+        <duration>6</duration>
+        <type>half</type>
         <dot/>
         <stem>down</stem>
       </note>
