@@ -22,7 +22,11 @@ IMG_4 = '4-we-wish-you-a-merry-christmas.jpg'
 IMG_5 = '5-auld-lang-syne.jpg'
 IMG_6 = 'simple-gifts.png'
 IMG_7 = 'scan/jingle-bells.jpg'
-IMG_TEST = IMG_5
+IMG_8 = 'scan/silent-night.jpg'
+IMG_9 = 'scan/happy-birthday.jpg'
+IMG_10 = 'scan/we-wish-you-a-merry-christmas.jpg'
+IMG_11 = 'scan/auld-lang-syne.jpg'
+IMG_TEST = IMG_7
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -353,8 +357,10 @@ def adaptive_removal():
         rect_width = staff_line[1]
         p1 = (0, rect_x)
         p2 = (wsl_width, rect_x + rect_width)
-        # Draw a red rectangle for each staff_line
+        # Draw a long, red rectangle for each STAFF LINE
         cv2.rectangle(img_without_staff_lines_overlay, p1, p2, (0, 0, 255), cv2.FILLED, 8, 0)
+    # TODO XIN
+    # cv2.imwrite('temp.jpg', img_without_staff_lines)
     # Apply the overlay
     alpha = 0.3
     cv2.addWeighted(img_without_staff_lines_overlay, alpha, img_without_staff_lines_rgb,
