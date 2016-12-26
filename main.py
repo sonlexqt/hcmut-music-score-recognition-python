@@ -20,8 +20,8 @@ IMG_2 = '2-silent-night.jpg'
 IMG_3 = '3-happy-birthday.jpg'
 IMG_4 = '4-we-wish-you-a-merry-christmas.jpg'
 IMG_5 = '5-auld-lang-syne.jpg'
-IMG_6 = 'new.png'
-IMG_7 = 'new.jpg'
+IMG_6 = 'simple-gifts.png'
+IMG_7 = 'scan/jingle-bells.jpg'
 IMG_TEST = IMG_5
 IMG_FILE = IMG_PATH + IMG_TEST
 
@@ -432,7 +432,7 @@ def recognize_symbols():
         if rect_height >= estimated_treble_clef_height:
             # This one has a big chance of being a treble clef
             # Check if it's really a treble clef
-            recognized_sbl = Utils.recognize_symbol(sub_image_resized)
+            # recognized_sbl = Utils.recognize_symbol(sub_image_resized)
             # This case is for making sure it's a treble clef !
             # if recognized_sbl.name == Symbols.get(14).name:  # 14 is index of TREBLE_CLEF
             #     treble_clefs.append(rect)
