@@ -19,20 +19,17 @@ start = -30
 stop = 30
 angle_result = 0
 for step in steps:
-    step = np.round(step, decimals=1)
     step_angles = np.arange(start=start, stop=stop + step, step=step)
     entropy_ps_length = len(step_angles)
     entropy_ps = [0] * entropy_ps_length
     i = 0
     for angle in step_angles:
-        print(angle)
         pthetas = [0] * height
         pthetas_avg = [0] * height
         sum_pthetas = 0
         center = (width / 2, height / 2)
         rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
         rotated_roi_img = cv2.warpAffine(img_candidate_points, rotation_matrix, (height, width))
-        # cv2.imshow('angle: ' + str(angle), rotated_roi_img)
         # The next calculation will use rotated_roi_img instead
         for h in range(0, height):
             sum_of_rows = 0
