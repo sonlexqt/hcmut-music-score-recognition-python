@@ -26,7 +26,7 @@ IMG_8 = 'scan/silent-night.jpg'
 IMG_9 = 'scan/happy-birthday.jpg'
 IMG_10 = 'scan/we-wish-you-a-merry-christmas.jpg'
 IMG_11 = 'scan/auld-lang-syne.jpg'
-IMG_TEST = IMG_7
+IMG_TEST = IMG_1
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -276,6 +276,8 @@ def candidate_points_extraction():
 def rotation_angle_estimation():
     # Step 4
     global img, img_candidate_points, img_rotated
+    # # TODO XIN (debug) write img_without_staff_lines
+    # cv2.imwrite('img_candidate_points.jpg', img_candidate_points)
     height, width = img_candidate_points.shape[:2]
     entropy_ps_length = MAX_ROTATION_ANGLE - MIN_ROTATION_ANGLE + 1
     entropy_ps = [0] * entropy_ps_length
@@ -359,7 +361,7 @@ def adaptive_removal():
         p2 = (wsl_width, rect_x + rect_width)
         # Draw a long, red rectangle for each STAFF LINE
         cv2.rectangle(img_without_staff_lines_overlay, p1, p2, (0, 0, 255), cv2.FILLED, 8, 0)
-    # TODO XIN
+    # # TODO XIN (debug) write img_without_staff_lines
     # cv2.imwrite('temp.jpg', img_without_staff_lines)
     # Apply the overlay
     alpha = 0.3
@@ -413,6 +415,7 @@ def get_connected_components():
 
 
 def recognize_symbols():
+    # Step 7
     global rects_merged, img_without_staff_lines, staff_lines, staff_height, staff_line_space, staff_line_width, score
     img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
     treble_clefs = []
@@ -539,6 +542,7 @@ def recognize_symbols():
 
 
 def save_as_structured_data():
+    # Step 8
     global score
     elem_score_partwise = Element('score-partwise')
     elem_part_list = SubElement(elem_score_partwise, 'part-list')

@@ -44,8 +44,8 @@
           <alter>0</alter>
           <octave>4</octave>
         </pitch>
-        <duration>2</duration>
-        <type>quarter</type>
+        <duration>4</duration>
+        <type>half</type>
         <stem>up</stem>
       </note>
     </measure>
@@ -76,8 +76,8 @@
           <alter>0</alter>
           <octave>4</octave>
         </pitch>
-        <duration>2</duration>
-        <type>quarter</type>
+        <duration>4</duration>
+        <type>half</type>
         <stem>up</stem>
       </note>
     </measure>
@@ -280,8 +280,8 @@
           <alter>0</alter>
           <octave>4</octave>
         </pitch>
-        <duration>2</duration>
-        <type>quarter</type>
+        <duration>4</duration>
+        <type>half</type>
         <stem>up</stem>
       </note>
     </measure>
@@ -312,8 +312,8 @@
           <alter>0</alter>
           <octave>4</octave>
         </pitch>
-        <duration>2</duration>
-        <type>quarter</type>
+        <duration>4</duration>
+        <type>half</type>
         <stem>up</stem>
       </note>
     </measure>
@@ -344,8 +344,8 @@
           <alter>0</alter>
           <octave>4</octave>
         </pitch>
-        <duration>2</duration>
-        <type>quarter</type>
+        <duration>4</duration>
+        <type>half</type>
         <stem>up</stem>
       </note>
     </measure>
@@ -387,10 +387,12 @@
           <alter>0</alter>
           <octave>4</octave>
         </pitch>
-        <duration>4</duration>
-        <type>half</type>
+        <duration>1</duration>
+        <type>eighth</type>
         <stem>up</stem>
       </note>
+    </measure>
+    <measure number="12">
       <note>
         <pitch>
           <step>E</step>
@@ -402,7 +404,6 @@
         <stem>up</stem>
       </note>
     </measure>
-    <measure number="12"/>
     <measure number="13">
       <note>
         <pitch>
@@ -548,9 +549,8 @@
           <alter>0</alter>
           <octave>4</octave>
         </pitch>
-        <duration>12</duration>
+        <duration>8</duration>
         <type>whole</type>
-        <dot/>
         <stem>up</stem>
       </note>
     </measure>
