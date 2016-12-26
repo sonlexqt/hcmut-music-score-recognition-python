@@ -580,8 +580,9 @@
           <alter>0</alter>
           <octave>5</octave>
         </pitch>
-        <duration>2</duration>
+        <duration>3</duration>
         <type>quarter</type>
+        <dot/>
         <stem>down</stem>
       </note>
       <note>

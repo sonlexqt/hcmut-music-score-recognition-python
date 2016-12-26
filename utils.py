@@ -266,6 +266,9 @@ class Utils:
         elif idx == 20:
             # NOTE_WHOLE
             sbl = symbol.SymbolSingleNote('NOTE_WHOLE', 1, 'up', 0, False)
+        elif idx == 21:
+            # NOTE_QUARTER_DOWN_WITH_DOT
+            sbl = symbol.SymbolSingleNote('NOTE_QUARTER_DOWN_WITH_DOT', 1/4, 'down', 1.5, True)
         else:
             print('!FAIL Symbol recognition - getting index:', idx)
         return sbl

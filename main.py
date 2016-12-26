@@ -490,6 +490,9 @@ def recognize_symbols():
                 sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
                 _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
                 sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
+                # (Debug) save sub images to a temp folder
+                # filename = 'images/symbols/temp/' + str(group_index) + '-' + str(i) + '.jpg'
+                # cv2.imwrite(filename, sub_image_resized)
                 this_symbol = Utils.recognize_symbol(sub_image_resized)
                 # Print each symbol and its recognized result (for debugging)
                 print('symbol', str(i), 'in group', group_index, this_symbol.name)
