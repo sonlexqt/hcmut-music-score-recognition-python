@@ -26,7 +26,7 @@ IMG_8 = 'scan/silent-night.jpg'
 IMG_9 = 'scan/happy-birthday.jpg'
 IMG_10 = 'scan/we-wish-you-a-merry-christmas.jpg'
 IMG_11 = 'scan/auld-lang-syne.jpg'
-IMG_TEST = IMG_1
+IMG_TEST = IMG_5
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -276,8 +276,8 @@ def candidate_points_extraction():
 def rotation_angle_estimation():
     # Step 4
     global img, img_candidate_points, img_rotated
-    # # TODO XIN (debug) write img_without_staff_lines
-    # cv2.imwrite('img_candidate_points.jpg', img_candidate_points)
+    # TODO XIN (debug) write img_without_staff_lines
+    cv2.imwrite(IMG_TEST, img_candidate_points)
     height, width = img_candidate_points.shape[:2]
     entropy_ps_length = MAX_ROTATION_ANGLE - MIN_ROTATION_ANGLE + 1
     entropy_ps = [0] * entropy_ps_length
