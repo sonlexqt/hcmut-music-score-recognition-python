@@ -26,7 +26,7 @@ IMG_8 = 'scan/silent-night.jpg'
 IMG_9 = 'scan/happy-birthday.jpg'
 IMG_10 = 'scan/we-wish-you-a-merry-christmas.jpg'
 IMG_11 = 'scan/auld-lang-syne.jpg'
-IMG_TEST = IMG_1
+IMG_TEST = IMG_5
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -430,7 +430,19 @@ def adaptive_removal():
 
 def get_connected_components():
     # Step 6
-    global img_without_staff_lines, staff_line_width, staff_height, rects_merged
+    global img_without_staff_lines, staff_lines, staff_line_width, staff_height, rects_merged
+    x = img_without_staff_lines.copy()
+    _, x = cv2.threshold(x, 127, 255, cv2.THRESH_BINARY_INV)
+    # Remove small dot/noise elements
+    kernel_width = int(round(staff_line_width))
+    kernel_height = int(round(staff_line_width)) * 2
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_height))
+    opening = cv2.morphologyEx(x, cv2.MORPH_OPEN, kernel)
+    _, opening = cv2.threshold(opening, 127, 255, cv2.THRESH_BINARY_INV)
+    img_without_staff_lines = opening.copy()
+    # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_width))
+    # dilating = cv2.morphologyEx(opening, cv2.MORPH_DILATE, kernel)
+    # cv2.imshow('= dilating =', dilating)
     img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
     _, thresh = cv2.threshold(img_without_staff_lines, 127, 255, cv2.THRESH_BINARY_INV)
     connectivity = 8
@@ -449,10 +461,12 @@ def get_connected_components():
         # Need to convert the OpenCV coordinate system to Descartes coordinate system
         reversed_p1 = (left, -top)
         reversed_p2 = (right, -bottom)
-        rects_init.append([reversed_p1, reversed_p2])
+        this_rect = [reversed_p1, reversed_p2]
+        rects_init.append(this_rect)
 
     # Need to remove the biggest rectangle (this won't happen in C++)
     rects_init.pop(0)
+
     rects_merged = Utils.remove_overlapping_rectangles(rects_init)
 
     for i, rect in enumerate(rects_merged):
@@ -543,13 +557,18 @@ def recognize_symbols():
                 # Check if this is a bar
                 if math.isclose(staff_height, rect_height, rel_tol=BAR_HEIGHT_REL_TOL):
                     this_symbol = Utils.get_symbol_by_index(5)  # 5 is index of 'bar'
+                    # Print each symbol and its recognized result (for debugging)
+                    print('symbol', str(i), 'in group', group_index, this_symbol.name)
                 else:
                     # Check if this is a dot
                     estimated_dot_height = staff_line_width * DOT_HEIGHT_RATIO
                     if rect_height <= estimated_dot_height:
                         this_symbol = Utils.get_symbol_by_index(0)  # 0 is index of 'dot'
+                        # Print each symbol and its recognized result (for debugging)
+                        print('symbol', str(i), 'in group', group_index, this_symbol.name)
                     else:
-                        this_symbol = Utils.get_symbol_by_index(-1)  # -1 means can't recognize this symbol
+                        pass
+                        # this_symbol = Utils.get_symbol_by_index(-1)  # -1 means can't recognize this symbol
             else:
                 # Else
                 sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
@@ -572,7 +591,6 @@ def recognize_symbols():
                     # Draw a blue rectangle for each note
                     cv2.rectangle(img_without_staff_lines_rgb, restored_p1, restored_p2, (255, 0, 0), 2, 8, 0)
                     this_symbol.calculate_pitch(rect, group_index, i, staff_lines, staff_line_space, staff_line_width)
-                    # print('* symbol', i, 'staff', group_index, ':', this_symbol.get_pitch())
 
             # Add this symbol to current_measure
             current_measure.add_symbols(this_symbol)
