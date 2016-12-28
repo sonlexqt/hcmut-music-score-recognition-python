@@ -26,7 +26,7 @@ IMG_8 = 'scan/silent-night.jpg'
 IMG_9 = 'scan/happy-birthday.jpg'
 IMG_10 = 'scan/we-wish-you-a-merry-christmas.jpg'
 IMG_11 = 'scan/auld-lang-syne.jpg'
-IMG_TEST = IMG_5
+IMG_TEST = IMG_11
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -45,7 +45,7 @@ MIN_ROTATION_ANGLE = - MAX_ROTATION_ANGLE
 REC_LINE_WIDTH = 2
 SPACE_BAR_KEY = 32
 HISTOGRAM_BINARY_RATIO = 2
-BAR_WIDTH_RATIO = 7
+BAR_WIDTH_RATIO = 3
 DOT_HEIGHT_RATIO = 5
 TREBLE_CLEF_HEIGHT_RATIO = 1.5
 BAR_HEIGHT_REL_TOL = 0.1
@@ -567,8 +567,7 @@ def recognize_symbols():
                         # Print each symbol and its recognized result (for debugging)
                         print('symbol', str(i), 'in group', group_index, this_symbol.name)
                     else:
-                        pass
-                        # this_symbol = Utils.get_symbol_by_index(-1)  # -1 means can't recognize this symbol
+                        this_symbol = Utils.get_symbol_by_index(-1)  # -1 means can't recognize this symbol
             else:
                 # Else
                 sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]

@@ -9,11 +9,10 @@ SYMBOL_SIZE = 50
 class Symbol:
     def __init__(self, class_name):
         self.class_name = class_name
-        self.name = 'DEFAULT_NAME'
+        self.name = 'UNKNOWN_NAME'
 
     def get_xml_elem(self, divisions):
-        text = 'Default get_xml_elem method with divisions = ' + str(divisions) + ' - name: ' \
-               + self.name + ' - class_name: ' + self.class_name
+        text = '(Unknown) divisions = ' + str(divisions) + ' - name: ' + self.name
         elem_comment = Comment(text)
         return [elem_comment]
 

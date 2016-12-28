@@ -270,6 +270,7 @@ class Utils:
             # NOTE_QUARTER_DOWN_WITH_DOT
             sbl = symbol.SymbolSingleNote('NOTE_QUARTER_DOWN_WITH_DOT', 1/4, 'down', 1.5, True)
         else:
+            sbl = symbol.Symbol('DEFAULT')
             print('!FAIL Symbol recognition - getting index:', idx)
         return sbl
 
