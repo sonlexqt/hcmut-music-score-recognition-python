@@ -398,19 +398,16 @@ def get_connected_components():
     # Step 6
     global img_without_staff_lines, staff_lines, staff_line_width, staff_height, rects_merged
 
-    x = img_without_staff_lines.copy()
-    _, x = cv2.threshold(x, 127, 255, cv2.THRESH_BINARY_INV)
-    # Remove small dot/noise elements
-    kernel_width = int(round(staff_line_width))
-    kernel_height = int(round(staff_line_width)) * 2
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_height))
-    opening = cv2.morphologyEx(x, cv2.MORPH_OPEN, kernel)
-    _, opening = cv2.threshold(opening, 127, 255, cv2.THRESH_BINARY_INV)
-    img_without_staff_lines = opening.copy()
+    # x = img_without_staff_lines.copy()
+    # _, x = cv2.threshold(x, 127, 255, cv2.THRESH_BINARY_INV)
+    # # Remove small dot/noise elements
+    # kernel_width = int(round(staff_line_width))
+    # kernel_height = int(round(staff_line_width)) * 2
+    # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_height))
+    # opening = cv2.morphologyEx(x, cv2.MORPH_OPEN, kernel)
+    # _, opening = cv2.threshold(opening, 127, 255, cv2.THRESH_BINARY_INV)
+    # img_without_staff_lines = opening.copy()
 
-    # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_width))
-    # dilating = cv2.morphologyEx(opening, cv2.MORPH_DILATE, kernel)
-    # cv2.imshow('= dilating =', dilating)
     img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
     _, thresh = cv2.threshold(img_without_staff_lines, 127, 255, cv2.THRESH_BINARY_INV)
     connectivity = 8
@@ -541,9 +538,11 @@ def recognize_symbols():
                 sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
                 _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
                 sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
+
                 # # TODO XIN (debug) save sub images to a temp folder
                 # filename = 'images/symbols/temp/' + str(group_index) + '-' + str(i) + '.jpg'
                 # cv2.imwrite(filename, sub_image_resized)
+
                 this_symbol = Utils.recognize_symbol(sub_image_resized)
                 # Print each symbol and its recognized result (for debugging)
                 print('symbol', str(i), 'in group', group_index, this_symbol.name)
