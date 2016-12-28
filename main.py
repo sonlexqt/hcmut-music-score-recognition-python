@@ -26,7 +26,7 @@ IMG_8 = 'scan/silent-night.jpg'
 IMG_9 = 'scan/happy-birthday.jpg'
 IMG_10 = 'scan/we-wish-you-a-merry-christmas.jpg'
 IMG_11 = 'scan/auld-lang-syne.jpg'
-IMG_TEST = IMG_1
+IMG_TEST = IMG_7
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -45,7 +45,7 @@ MIN_ROTATION_ANGLE = - MAX_ROTATION_ANGLE
 REC_LINE_WIDTH = 2
 SPACE_BAR_KEY = 32
 HISTOGRAM_BINARY_RATIO = 2
-BAR_WIDTH_RATIO = 3
+BAR_WIDTH_RATIO = 4
 DOT_HEIGHT_RATIO = 5
 TREBLE_CLEF_HEIGHT_RATIO = 1.5
 BAR_HEIGHT_REL_TOL = 0.1
@@ -398,6 +398,7 @@ def get_connected_components():
     # Step 6
     global img_without_staff_lines, staff_lines, staff_line_width, staff_height, rects_merged
 
+    # # TODO XIN apply opening operation or not ?
     # x = img_without_staff_lines.copy()
     # _, x = cv2.threshold(x, 127, 255, cv2.THRESH_BINARY_INV)
     # # Remove small dot/noise elements
@@ -405,6 +406,7 @@ def get_connected_components():
     # kernel_height = int(round(staff_line_width)) * 2
     # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_height))
     # opening = cv2.morphologyEx(x, cv2.MORPH_OPEN, kernel)
+    # cv2.imshow('=== OPENING ===', opening)
     # _, opening = cv2.threshold(opening, 127, 255, cv2.THRESH_BINARY_INV)
     # img_without_staff_lines = opening.copy()
 
@@ -501,9 +503,12 @@ def recognize_symbols():
         default_key_signature = SymbolKeySignature('KEY_SIGNATURE_DEFAULT', 0)
         current_staff.set_key_signature(default_key_signature)
         current_measure = None
+        current_number_of_measures = 0
         for i, rect in enumerate(group):
             if i == 0:
                 current_measure = Measure()
+                current_measure.index = current_number_of_measures
+                current_number_of_measures += 1
 
             left, top, right, bottom = Utils.get_rect_coordinates(rect)
             # Now need to convert the Descartes coordinate system back to the OpenCV coordinate system
@@ -540,18 +545,26 @@ def recognize_symbols():
                 sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
 
                 # # TODO XIN (debug) save sub images to a temp folder
-                # filename = 'images/symbols/temp/' + str(group_index) + '-' + str(i) + '.jpg'
-                # cv2.imwrite(filename, sub_image_resized)
+                filename = 'images/symbols/temp/' + str(group_index) + '-' + str(i) + '.jpg'
+                cv2.imwrite(filename, sub_image_resized)
 
                 this_symbol = Utils.recognize_symbol(sub_image_resized)
                 # Print each symbol and its recognized result (for debugging)
                 print('symbol', str(i), 'in group', group_index, this_symbol.name)
                 if this_symbol.class_name == 'key_signature':
-                    # Set this staff's key signature (optional)
-                    current_staff.set_key_signature(this_symbol)
+                    if current_measure.index != 0:
+                        print('KEY SIGNATURE MEASURE NOT 0:', str(current_measure.index))
+                        this_symbol = Utils.get_symbol_by_index(5)  # 5 is index of 'bar'
+                    else:
+                        # Set this staff's key signature (optional)
+                        current_staff.set_key_signature(this_symbol)
                 if this_symbol.class_name == 'time_signature':
-                    # Set this staff's time signature (required)
-                    current_staff.set_time_signature(this_symbol)
+                    if current_measure.index != 0:
+                        print('TIME SIGNATURE MEASURE NOT 0:', str(current_measure.index))
+                        this_symbol = Utils.get_symbol_by_index(5)  # 5 is index of 'bar'
+                    else:
+                        # Set this staff's time signature (required)
+                        current_staff.set_time_signature(this_symbol)
                 if this_symbol.class_name == 'note':
                     # This is a note
                     # Draw a blue rectangle for each note
@@ -571,6 +584,8 @@ def recognize_symbols():
                     current_staff.add_measure(current_measure)
                     # Then, create a new measure
                     current_measure = Measure()
+                    current_measure.index = current_number_of_measures
+                    current_number_of_measures += 1
             else:
                 print('symbol', i, 'at group_index', group_index, 'not found')
         # Add current_staff to the score
