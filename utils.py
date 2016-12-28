@@ -28,6 +28,11 @@ def intersection(rect1, rect2):
     left1, top1, right1, bottom1 = Utils.get_rect_coordinates(rect1)
     # rect2's coordinates
     left2, top2, right2, bottom2 = Utils.get_rect_coordinates(rect2)
+    # Sort the two rects by x coordinate
+    if left2 > left1:
+        rect1, rect2 = rect2, rect1
+        left1, top1, right1, bottom1 = Utils.get_rect_coordinates(rect1)
+        left2, top2, right2, bottom2 = Utils.get_rect_coordinates(rect2)
     # Calculate the intersection
     left = max(left1, left2)
     top = min(top1, top2)

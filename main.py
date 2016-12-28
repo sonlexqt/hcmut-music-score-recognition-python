@@ -26,7 +26,7 @@ IMG_8 = 'scan/silent-night.jpg'
 IMG_9 = 'scan/happy-birthday.jpg'
 IMG_10 = 'scan/we-wish-you-a-merry-christmas.jpg'
 IMG_11 = 'scan/auld-lang-syne.jpg'
-IMG_TEST = IMG_11
+IMG_TEST = IMG_7
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -334,40 +334,6 @@ def rotation_angle_estimation():
         start = min_angle - step
         stop = min_angle + step
 
-    # entropy_ps_length = MAX_ROTATION_ANGLE - MIN_ROTATION_ANGLE + 1
-    # entropy_ps = [0] * entropy_ps_length
-    # for a in range(0, entropy_ps_length):
-    #     pthetas = [0] * height
-    #     pthetas_avg = [0] * height
-    #     sum_pthetas = 0
-    #     angle = a - MAX_ROTATION_ANGLE
-    #     center = (width / 2, height / 2)
-    #     rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
-    #     rotated_roi_img = cv2.warpAffine(img_candidate_points, rotation_matrix, (height, width))
-    #     # The next calculation will use rotated_roi_img instead
-    #     for h in range(0, height):
-    #         sum_of_rows = 0
-    #         for w in range(0, width):
-    #             # TODO XIN weird error: index out of bounds (have to try-catch)
-    #             try:
-    #                 sum_of_rows += rotated_roi_img[h, w]
-    #             except IndexError:
-    #                 break  # Break out when list index out of range
-    #         pthetas[h] = sum_of_rows
-    #         sum_pthetas += pthetas[h]
-    #     for h in range(0, height):
-    #         pthetas_avg[h] = pthetas[h] / sum_pthetas
-    #     entropy_ps[a] = calculate_entropy(pthetas_avg, height)
-    # min_a = 0
-    # min_entropy = entropy_ps[min_a]
-    # min_angle = min_a - MAX_ROTATION_ANGLE
-    # for a in range(0, entropy_ps_length):
-    #     if entropy_ps[a] < min_entropy:
-    #         min_a = a
-    #         min_entropy = entropy_ps[a]
-    #         min_angle = min_a - MAX_ROTATION_ANGLE
-    # print('=== Estimated rotation angle (deg):', min_angle)
-
     img_height, img_width = img.shape[:2]
     img_center = (img_height / 2, img_width / 2)
     rotation_matrix = cv2.getRotationMatrix2D(img_center, angle_result, 1.0)
@@ -431,6 +397,7 @@ def adaptive_removal():
 def get_connected_components():
     # Step 6
     global img_without_staff_lines, staff_lines, staff_line_width, staff_height, rects_merged
+
     x = img_without_staff_lines.copy()
     _, x = cv2.threshold(x, 127, 255, cv2.THRESH_BINARY_INV)
     # Remove small dot/noise elements
@@ -440,6 +407,7 @@ def get_connected_components():
     opening = cv2.morphologyEx(x, cv2.MORPH_OPEN, kernel)
     _, opening = cv2.threshold(opening, 127, 255, cv2.THRESH_BINARY_INV)
     img_without_staff_lines = opening.copy()
+
     # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_width))
     # dilating = cv2.morphologyEx(opening, cv2.MORPH_DILATE, kernel)
     # cv2.imshow('= dilating =', dilating)
@@ -573,9 +541,9 @@ def recognize_symbols():
                 sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
                 _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
                 sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
-                # (Debug) save sub images to a temp folder
+                # # TODO XIN (debug) save sub images to a temp folder
                 # filename = 'images/symbols/temp/' + str(group_index) + '-' + str(i) + '.jpg'
-                # cv2.imwrite(filename, sub_image_resized)
+                cv2.imwrite(filename, sub_image_resized)
                 this_symbol = Utils.recognize_symbol(sub_image_resized)
                 # Print each symbol and its recognized result (for debugging)
                 print('symbol', str(i), 'in group', group_index, this_symbol.name)
@@ -709,9 +677,9 @@ def save_as_structured_data():
                         # that elem_symbol contains more than 1 elem
                         elem_measure.extend(elem_symbol)
 
-    print('=== Begin XML output')
-    print(prettify(elem_score_partwise))
-    print('=== End XML output')
+    # print('=== Begin XML output')
+    # print(prettify(elem_score_partwise))
+    # print('=== End XML output')
     # Write pretty output to file
     file = open('output_pretty.xml', mode='w')
     file.write(prettify(elem_score_partwise))

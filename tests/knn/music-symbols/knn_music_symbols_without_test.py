@@ -38,7 +38,7 @@ knn = cv2.ml.KNearest_create()
 knn.train(train, cv2.ml.ROW_SAMPLE, train_labels)
 
 # Test the result with a new comer
-file_name = 'symbol_10.jpg'
+file_name = 'symbol_12.jpg'
 symbol = cv2.imread(file_name)
 symbol_gray = cv2.cvtColor(symbol, cv2.COLOR_BGR2GRAY)
 symbol_np_array = np.array(symbol_gray)
