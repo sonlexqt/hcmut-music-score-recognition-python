@@ -26,7 +26,7 @@ IMG_8 = 'scan/silent-night.jpg'
 IMG_9 = 'scan/happy-birthday.jpg'
 IMG_10 = 'scan/we-wish-you-a-merry-christmas.jpg'
 IMG_11 = 'scan/auld-lang-syne.jpg'
-IMG_TEST = IMG_7
+IMG_TEST = IMG_10
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -545,8 +545,8 @@ def recognize_symbols():
                 sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
 
                 # # TODO XIN (debug) save sub images to a temp folder
-                filename = 'images/symbols/temp/' + str(group_index) + '-' + str(i) + '.jpg'
-                cv2.imwrite(filename, sub_image_resized)
+                # filename = 'images/symbols/temp/' + str(group_index) + '-' + str(i) + '.jpg'
+                # cv2.imwrite(filename, sub_image_resized)
 
                 this_symbol = Utils.recognize_symbol(sub_image_resized)
                 # Print each symbol and its recognized result (for debugging)
