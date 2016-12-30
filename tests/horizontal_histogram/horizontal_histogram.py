@@ -41,7 +41,11 @@ for h in range(0, height):
     data[h] *= ratio
 
 data = array(data)
-plt.barh(y_pos, data, align='center', alpha=0.4)
+bars_list = plt.barh(y_pos, data, align='center', alpha=0.4)
+for bar in bars_list:
+    bar.set_color('r')
+    pass
+
 plt.yticks(y_pos)
 
 plt.imshow(im)
