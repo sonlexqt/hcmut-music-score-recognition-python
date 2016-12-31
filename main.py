@@ -26,7 +26,7 @@ IMG_8 = 'scan/silent-night.jpg'
 IMG_9 = 'scan/happy-birthday.jpg'
 IMG_10 = 'scan/we-wish-you-a-merry-christmas.jpg'
 IMG_11 = 'scan/auld-lang-syne.jpg'
-IMG_TEST = IMG_10
+IMG_TEST = IMG_7
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -140,7 +140,7 @@ def estimate_staff_info(img_rotated):
     height, width = img_rotated.shape[:2]
     pthetas = [0] * height
     img_rotated_gray = cv2.cvtColor(img_rotated, cv2.COLOR_BGR2GRAY)
-    _, img_rotated_thresh = cv2.threshold(img_rotated_gray, 127, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    _, img_rotated_thresh = cv2.threshold(img_rotated_gray, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     cv2.imshow(WTITLE_IMG_ROTATED_THRESH, img_rotated_thresh)
 
     # Calculate horizontal projection
@@ -246,6 +246,7 @@ def read_src_image():
 def roi_selection():
     # Step 2
     global img_roi, is_roi_img_shown
+    # Add mouse event to the WTITLE_IMG_SOURCE window
     cv2.setMouseCallback(WTITLE_IMG_SOURCE, mouse_drag_handler)
     while 1:
         if is_roi_selected:
@@ -260,15 +261,18 @@ def candidate_points_extraction():
     # Step 3
     global img_roi, img_candidate_points
     roi_img_gray = cv2.cvtColor(img_roi, cv2.COLOR_BGR2GRAY)
-    _, roi_img_thresh = cv2.threshold(roi_img_gray, 127, 255, cv2.THRESH_BINARY_INV)
+    _, roi_img_thresh = cv2.threshold(roi_img_gray, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+    # Create a blank image
     height, width = roi_img_thresh.shape[:2]
     img_candidate_points = np.zeros((height, width), np.uint8)
+    # Get candidate points
     for i in range(0, height):
         for j in range(0, width):
             pixel_gray_scale_value = roi_img_thresh[i, j]
             if is_this_pixel_removed(i, j, pixel_gray_scale_value, roi_img_thresh):
                 img_candidate_points[i, j] = pixel_gray_scale_value
-    _, img_candidate_points = cv2.threshold(img_candidate_points, 127, 255, cv2.THRESH_BINARY)
+    # Show the result
+    _, img_candidate_points = cv2.threshold(img_candidate_points, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     cv2.imshow(WTITLE_CANDIDATE_POINTS, img_candidate_points)
     cv2.waitKey(0)
 
@@ -280,15 +284,19 @@ def rotation_angle_estimation():
     # cv2.imwrite(IMG_TEST, img_candidate_points)
     height, width = img_candidate_points.shape[:2]
 
+    # Define the loops steps
     steps = [10, 2, 0.1]
     start = MIN_ROTATION_ANGLE
     stop = MAX_ROTATION_ANGLE
     angle_result = 0
+    print('=== Rotation angle estimation')
+
     for step in steps:
         step_angles = np.arange(start=start, stop=stop + step, step=step)
         entropy_ps_length = len(step_angles)
         entropy_ps = [0] * entropy_ps_length
         i = 0
+
         print('> step:', step)
         for angle in step_angles:
             print(angle)
@@ -318,22 +326,21 @@ def rotation_angle_estimation():
                 entropy_ps[i] = 100
             i += 1
 
-        min_a = 0
-        min_entropy = entropy_ps[min_a]
+        min_entropy = entropy_ps[0]
         min_angle = step_angles[0]
         i = 0
         for angle in step_angles:
             if entropy_ps[i] < min_entropy:
-                min_a = i
                 min_entropy = entropy_ps[i]
                 min_angle = angle
             i += 1
 
         angle_result = np.round(min_angle, decimals=1)
-        print('=== Estimated rotation angle in step', step, 'is:', angle_result)
+        print('>> Estimated rotation angle in step', step, 'is:', angle_result)
         start = min_angle - step
         stop = min_angle + step
 
+    # Rotate the source img to the correct angle
     img_height, img_width = img.shape[:2]
     img_center = (img_height / 2, img_width / 2)
     rotation_matrix = cv2.getRotationMatrix2D(img_center, angle_result, 1.0)
@@ -351,7 +358,8 @@ def adaptive_removal():
     # Step 5
     global img_rotated, img_without_staff_lines, staff_line_width, staff_lines
     img_rotated_gray = cv2.cvtColor(img_rotated, cv2.COLOR_BGR2GRAY)
-    _, img_rotated_thresh = cv2.threshold(img_rotated_gray, 127, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    _, img_rotated_thresh = cv2.threshold(img_rotated_gray, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+
     # Get the staff lines info
     estimate_staff_info(img_rotated)
 
@@ -371,9 +379,10 @@ def adaptive_removal():
         img_without_staff_lines = img_without_staff_lines - blank_rotated_img
 
     # Perform dilation to restore the missing details
+    # TODO XIN need to review this !
     dilate_structuring_element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     img_without_staff_lines = cv2.dilate(img_without_staff_lines, dilate_structuring_element)
-    _, img_without_staff_lines = cv2.threshold(img_without_staff_lines, 127, 255, cv2.THRESH_BINARY_INV)
+    _, img_without_staff_lines = cv2.threshold(img_without_staff_lines, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
 
     # Now redraw the removed staff lines
     img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
@@ -385,8 +394,10 @@ def adaptive_removal():
         p2 = (wsl_width, rect_x + rect_width)
         # Draw a long, red rectangle for each STAFF LINE
         cv2.rectangle(img_without_staff_lines_overlay, p1, p2, (0, 0, 255), cv2.FILLED, 8, 0)
+
     # # TODO XIN (debug) write img_without_staff_lines
     # cv2.imwrite('temp.jpg', img_without_staff_lines)
+
     # Apply the overlay
     alpha = 0.3
     cv2.addWeighted(img_without_staff_lines_overlay, alpha, img_without_staff_lines_rgb,
@@ -413,7 +424,7 @@ def get_connected_components():
     # img_without_staff_lines = opening.copy()
 
     img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
-    _, thresh = cv2.threshold(img_without_staff_lines, 127, 255, cv2.THRESH_BINARY_INV)
+    _, thresh = cv2.threshold(img_without_staff_lines, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     connectivity = 8
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(thresh, connectivity, cv2.CV_32S)
     rects_init = []
@@ -474,7 +485,7 @@ def recognize_symbols():
         y = restored_p1[1]
         x = restored_p1[0]
         sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
-        _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
+        _, sub_image = cv2.threshold(sub_image, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
         sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
         estimated_treble_clef_height = staff_height * TREBLE_CLEF_HEIGHT_RATIO
         if rect_height >= estimated_treble_clef_height:
@@ -543,7 +554,7 @@ def recognize_symbols():
             else:
                 # Else
                 sub_image = img_without_staff_lines[y:y + rect_height, x:x + rect_width]
-                _, sub_image = cv2.threshold(sub_image, 127, 255, cv2.THRESH_BINARY_INV)
+                _, sub_image = cv2.threshold(sub_image, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
                 sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
 
                 # # TODO XIN (debug) save sub images to a temp folder
