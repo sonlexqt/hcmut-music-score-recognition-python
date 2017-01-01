@@ -7,6 +7,7 @@ from xml.dom import minidom
 # Import modules
 from utils import Utils
 from symbol import SymbolKeySignature
+from symbol import SymbolTimeSignature
 from measure import Measure
 from staff import Staff
 from score import Score
@@ -15,20 +16,29 @@ from score import Score
 FOR TESTING
 """""""""""""""""""""""""""""""""""""""
 IMG_PATH = 'images/scores/'
-IMG_1 = '1-jingle-bells.jpg'
-IMG_2 = '2-silent-night.jpg'
-IMG_3 = '3-happy-birthday.jpg'
-IMG_4 = '4-we-wish-you-a-merry-christmas.jpg'
-IMG_5 = '5-auld-lang-syne.jpg'
 
-IMG_6 = 'scan/jingle-bells.jpg'
-IMG_7 = 'scan/silent-night.jpg'
-IMG_8 = 'scan/happy-birthday.jpg'
-IMG_9 = 'scan/we-wish-you-a-merry-christmas.jpg'
-IMG_10 = 'scan/auld-lang-syne.jpg'
+IMG_TEST_1 = 'test/1-jingle-bells'
+IMG_TEST_2 = 'test/2-silent-night'
+IMG_TEST_3 = 'test/3-happy-birthday'
+IMG_TEST_4 = 'test/4-we-wish-you-a-merry-christmas'
+IMG_TEST_5 = 'test/5-auld-lang-syne'
 
-IMG_TEST = IMG_4
-IMG_FILE = IMG_PATH + IMG_TEST
+IMG_EVAL_1 = 'evaluate/1-twinkle-twinkle-little-star'
+IMG_EVAL_2 = 'evaluate/2-rua-mat-nhu-meo'
+IMG_EVAL_3 = 'evaluate/3-sap-den-tet-roi'
+IMG_EVAL_4 = 'evaluate/4-bui-phan'
+IMG_EVAL_5 = 'evaluate/5-chac-ai-do-se-ve'
+
+is_img_scanned = False
+IMG_SCAN = ''
+if is_img_scanned:
+    IMG_SCAN = '-scan'
+
+IMG_EXTENSION = '.jpg'
+
+IMG_FILE = IMG_EVAL_1
+
+IMG_FILE = IMG_PATH + IMG_FILE + IMG_SCAN + IMG_EXTENSION
 
 """""""""""""""""""""""""""""""""""""""
 CONSTANTS
@@ -122,7 +132,7 @@ def is_this_pixel_removed(i, j, value, image):
                 return False
             if j >= 1 and image[i - 2, j - 1] > 0:
                 return False
-            if j < max_cols and image[i - 2, j + 1] > 0:
+            if j < max_cols - 1 and image[i - 2, j + 1] > 0:
                 return False
     return True
 
@@ -449,10 +459,11 @@ def get_connected_components():
 
     # Apply dilation to fix the broken symbols
     slw = int(round(staff_line_width))
+    # TODO XIN this should be: if staff_line_width is too small (e.g 1), go with ellipse, else go with rect
     kernel_width = slw
     kernel_height = slw
-    morph_structuring_element = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_height))
-    # morph_structuring_element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    # morph_structuring_element = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_height))
+    morph_structuring_element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     dilation = cv2.morphologyEx(thresh, cv2.MORPH_DILATE, morph_structuring_element)
     # Assign the result to img_without_staff_lines
     _, result = cv2.threshold(dilation, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
@@ -548,8 +559,12 @@ def recognize_symbols():
     for group_index, group in enumerate(rects_sorted):
         # Initialize staff
         current_staff = Staff()
+        # Set default key signature (None)
         default_key_signature = SymbolKeySignature('KEY_SIGNATURE_DEFAULT', 0)
         current_staff.set_key_signature(default_key_signature)
+        # Set default time signature (2/4)
+        default_time_signature = SymbolTimeSignature('TIME_SIGNATURE_2_4', 2, 4)
+        current_staff.set_time_signature(default_time_signature)
         current_measure = None
         current_number_of_measures = 0
         for i, rect in enumerate(group):
