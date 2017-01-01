@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-SYMBOLS_ROWS = 22
+SYMBOLS_ROWS = 24
 SYMBOLS_COLUMNS = 20
 
 symbols = cv2.imread('symbols.jpg')

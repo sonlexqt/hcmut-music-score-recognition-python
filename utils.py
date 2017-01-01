@@ -274,6 +274,13 @@ class Utils:
         elif idx == 21:
             # NOTE_QUARTER_DOWN_WITH_DOT
             sbl = symbol.SymbolSingleNote('NOTE_QUARTER_DOWN_WITH_DOT', 1/4, 'down', 1.5, True)
+        elif idx == 22:
+            # KEY_SIGNATURE_1_b
+            sbl = symbol.SymbolKeySignature('KEY_SIGNATURE_1_b', -1)
+        elif idx == 23:
+            # TIME_SIGNATURE_2_4
+            sbl = symbol.SymbolTimeSignature('TIME_SIGNATURE_2_4', 2, 4)
+            pass
         else:
             sbl = symbol.Symbol('DEFAULT')
             print('!FAIL Symbol recognition - getting index:', idx)
