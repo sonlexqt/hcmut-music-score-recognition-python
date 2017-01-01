@@ -20,13 +20,14 @@ IMG_2 = '2-silent-night.jpg'
 IMG_3 = '3-happy-birthday.jpg'
 IMG_4 = '4-we-wish-you-a-merry-christmas.jpg'
 IMG_5 = '5-auld-lang-syne.jpg'
-IMG_6 = 'simple-gifts.png'
-IMG_7 = 'scan/jingle-bells.jpg'
-IMG_8 = 'scan/silent-night.jpg'
-IMG_9 = 'scan/happy-birthday.jpg'
-IMG_10 = 'scan/we-wish-you-a-merry-christmas.jpg'
-IMG_11 = 'scan/auld-lang-syne.jpg'
-IMG_TEST = IMG_7
+
+IMG_6 = 'scan/jingle-bells.jpg'
+IMG_7 = 'scan/silent-night.jpg'
+IMG_8 = 'scan/happy-birthday.jpg'
+IMG_9 = 'scan/we-wish-you-a-merry-christmas.jpg'
+IMG_10 = 'scan/auld-lang-syne.jpg'
+
+IMG_TEST = IMG_4
 IMG_FILE = IMG_PATH + IMG_TEST
 
 """""""""""""""""""""""""""""""""""""""
@@ -378,15 +379,29 @@ def adaptive_removal():
                     blank_rotated_img[i, j] = pixel_gray_scale_value
         img_without_staff_lines = img_without_staff_lines - blank_rotated_img
 
-    # Perform dilation to restore the missing details
-    # TODO XIN need to review this !
-    dilate_structuring_element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    img_without_staff_lines = cv2.dilate(img_without_staff_lines, dilate_structuring_element)
+    # cv2.imshow('original', img_without_staff_lines)
+    # sml = int(round(staff_line_width))
+    # # Perform morphology ops to restore the missing details
+    # kernel_width = 1
+    # kernel_height = sml
+    # morph_structuring_element = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_height))
+    # dilate = cv2.dilate(img_without_staff_lines, morph_structuring_element)
+    # erode = cv2.erode(img_without_staff_lines, morph_structuring_element)
+    # closing = cv2.morphologyEx(img_without_staff_lines, cv2.MORPH_CLOSE, morph_structuring_element)
+    # opening = cv2.morphologyEx(img_without_staff_lines, cv2.MORPH_OPEN, morph_structuring_element)
+    # cv2.imshow('erode', erode)
+    # cv2.imshow('dilate', dilate)
+    # cv2.imshow('closing', closing)
+    # cv2.imshow('opening', opening)
+
+    # Here: using the original (without morph ops)
     _, img_without_staff_lines = cv2.threshold(img_without_staff_lines, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
 
-    # Now redraw the removed staff lines
+    # Convert img_without_staff_lines to RGB
     img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
+    # Create an overlay
     img_without_staff_lines_overlay = img_without_staff_lines_rgb.copy()
+    # Now redraw the removed staff lines
     for staff_line in staff_lines:
         rect_x = staff_line[0]
         rect_width = staff_line[1]
@@ -411,21 +426,41 @@ def get_connected_components():
     # Step 6
     global img_without_staff_lines, staff_lines, staff_line_width, staff_height, rects_merged
 
-    # # TODO XIN apply opening operation or not ?
-    # x = img_without_staff_lines.copy()
-    # _, x = cv2.threshold(x, 127, 255, cv2.THRESH_BINARY_INV)
-    # # Remove small dot/noise elements
-    # kernel_width = int(round(staff_line_width))
-    # kernel_height = int(round(staff_line_width)) * 2
-    # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_height))
-    # opening = cv2.morphologyEx(x, cv2.MORPH_OPEN, kernel)
-    # cv2.imshow('=== OPENING ===', opening)
-    # _, opening = cv2.threshold(opening, 127, 255, cv2.THRESH_BINARY_INV)
-    # img_without_staff_lines = opening.copy()
+    # GET CONNECTED COMPONENTS
+    connectivity = 8
+    # FIRST ROUND: Manually remove the small dots / noise
+    _, thresh = cv2.threshold(img_without_staff_lines, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(thresh, connectivity, cv2.CV_32S)
+    rects_noise = []
 
+    for i in range(0, num_labels):
+        left = stats[i, cv2.CC_STAT_LEFT]
+        top = stats[i, cv2.CC_STAT_TOP]
+        rect_width = stats[i, cv2.CC_STAT_WIDTH]
+        rect_height = stats[i, cv2.CC_STAT_HEIGHT]
+        if rect_height < staff_line_width:
+            y = top
+            x = left
+            # Assign black pixel value to the noise
+            sub_image = thresh[y:y + rect_height, x:x + rect_width]
+            height, width = sub_image.shape[:2]
+            thresh[y:y + rect_height, x:x + rect_width] = np.zeros((height, width), np.uint8)
+            pass
+
+    # Apply dilation to fix the broken symbols
+    slw = int(round(staff_line_width))
+    kernel_width = slw
+    kernel_height = slw
+    morph_structuring_element = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_height))
+    # morph_structuring_element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    dilation = cv2.morphologyEx(thresh, cv2.MORPH_DILATE, morph_structuring_element)
+    # Assign the result to img_without_staff_lines
+    _, result = cv2.threshold(dilation, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+    img_without_staff_lines = result
+
+    # SECOND ROUND: Get connected components
     img_without_staff_lines_rgb = cv2.cvtColor(img_without_staff_lines, cv2.COLOR_GRAY2RGB)
     _, thresh = cv2.threshold(img_without_staff_lines, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-    connectivity = 8
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(thresh, connectivity, cv2.CV_32S)
     rects_init = []
 
