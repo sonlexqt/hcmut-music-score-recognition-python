@@ -29,14 +29,14 @@ IMG_EVAL_3 = 'evaluate/3-sap-den-tet-roi'
 IMG_EVAL_4 = 'evaluate/4-bui-phan'
 IMG_EVAL_5 = 'evaluate/5-chac-ai-do-se-ve'
 
-is_img_scanned = False
+is_img_scanned = True
 IMG_SCAN = ''
 if is_img_scanned:
     IMG_SCAN = '-scan'
 
 IMG_EXTENSION = '.jpg'
 
-IMG_FILE = IMG_EVAL_1
+IMG_FILE = IMG_TEST_4
 
 IMG_FILE = IMG_PATH + IMG_FILE + IMG_SCAN + IMG_EXTENSION
 
@@ -56,7 +56,7 @@ MIN_ROTATION_ANGLE = - MAX_ROTATION_ANGLE
 REC_LINE_WIDTH = 2
 SPACE_BAR_KEY = 32
 HISTOGRAM_BINARY_RATIO = 2
-BAR_WIDTH_RATIO = 4
+BAR_WIDTH_RATIO = 3
 DOT_HEIGHT_RATIO = 5
 TREBLE_CLEF_HEIGHT_RATIO = 1.5
 BAR_HEIGHT_REL_TOL = 0.1
@@ -586,6 +586,9 @@ def recognize_symbols():
             #             cv2.FONT_HERSHEY_PLAIN, 0.7, (0, 0, 255))
             estimated_bar_width = staff_line_width * BAR_WIDTH_RATIO
             this_symbol = None
+            # TODO XIN lots of errors happen here
+            print('::: rect_width', rect_width)
+            print('estimated_bar_width', estimated_bar_width)
             if rect_width <= estimated_bar_width:
                 # Check if this is a bar
                 if math.isclose(staff_height, rect_height, rel_tol=BAR_HEIGHT_REL_TOL):
@@ -607,9 +610,9 @@ def recognize_symbols():
                 _, sub_image = cv2.threshold(sub_image, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
                 sub_image_resized = cv2.resize(sub_image, (DEFAULT_SYMBOL_SIZE_WIDTH, DEFAULT_SYMBOL_SIZE_HEIGHT))
 
-                # # TODO XIN (debug) save sub images to a temp folder
-                # filename = 'images/symbols/temp/' + str(group_index) + '-' + str(i) + '.jpg'
-                # cv2.imwrite(filename, sub_image_resized)
+                # TODO XIN (debug) save sub images to a temp folder
+                filename = 'images/symbols/temp/' + str(group_index) + '-' + str(i) + '.jpg'
+                cv2.imwrite(filename, sub_image_resized)
 
                 this_symbol = Utils.recognize_symbol(sub_image_resized)
                 # Print each symbol and its recognized result (for debugging)
