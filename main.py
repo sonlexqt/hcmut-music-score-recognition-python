@@ -359,9 +359,15 @@ def rotation_angle_estimation():
     # cv2.warpAffine(src, M, dsize, dst=None, flags=None, borderMode=None, borderValue=None)
     img_rotated = cv2.warpAffine(img, rotation_matrix, (img_width, img_height),
                                  cv2.INTER_AREA, cv2.BORDER_DEFAULT, cv2.BORDER_REPLICATE)
+
     # # TODO XIN (debug) save img_rotated to disk
     # cv2.imwrite('img_rotated.jpg', img_rotated)
-    cv2.imshow(WTITLE_IMG_ROTATED, img_rotated)
+
+    # Show img_rotated with angle_result
+    img_rotated_with_angle = img_rotated.copy()
+    str_result = 'Estimated angle: ' + str(angle_result) + ' degree'
+    cv2.putText(img_rotated_with_angle, str_result, (80, 80), cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), thickness=3)
+    cv2.imshow(WTITLE_IMG_ROTATED, img_rotated_with_angle)
     cv2.waitKey(0)
 
 
