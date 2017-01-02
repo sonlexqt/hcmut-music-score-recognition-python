@@ -40,6 +40,8 @@ IMG_FILE = IMG_TEST_4
 
 IMG_FILE = IMG_PATH + IMG_FILE + IMG_SCAN + IMG_EXTENSION
 
+# IMG_FILE = 'images/scores/test/2-silent-night.jpg'
+
 """""""""""""""""""""""""""""""""""""""
 CONSTANTS
 """""""""""""""""""""""""""""""""""""""

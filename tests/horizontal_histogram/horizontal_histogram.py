@@ -24,12 +24,14 @@ data = np.empty(height)
 data.fill(0)
 
 _, im_thresh = cv2.threshold(im_gray, 127, 255, cv2.THRESH_BINARY_INV)
+
 # Calculate horizontal projection
 for h in range(0, height):
     sum_of_rows = 0
     for w in range(0, width):
         sum_of_rows += im_thresh[h, w] / 255
     data[h] = sum_of_rows
+
 # Get the maximum of the projection(T)
 T = data[0]
 for h in range(0, height):
@@ -40,6 +42,12 @@ ratio = width / T
 for h in range(0, height):
     data[h] *= ratio
 
+for h in range(0, height):
+    if data[h] > width / 4:
+        data[h] = width
+    else:
+        data[h] = 0
+
 data = array(data)
 bars_list = plt.barh(y_pos, data, align='center', alpha=0.4)
 for bar in bars_list:
@@ -48,5 +56,9 @@ for bar in bars_list:
 
 plt.yticks(y_pos)
 
-plt.imshow(im)
+
+height, width = im_thresh.shape[:2]
+hist_only = np.full((height, width), 255, np.uint8)
+hist_only = cv2.cvtColor(hist_only, cv2.COLOR_GRAY2BGR)
+plt.imshow(hist_only)
 plt.show()
